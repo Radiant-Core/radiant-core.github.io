@@ -45,6 +45,7 @@
             top: 0;
             z-index: 100;
             background: rgba(10, 14, 23, 0.85);
+            -webkit-backdrop-filter: blur(12px);
             backdrop-filter: blur(12px);
             border-bottom: 1px solid var(--border);
         }
@@ -411,6 +412,20 @@
         .algo-pow { background: rgba(56,189,248,0.12); color: var(--accent); }
         .algo-token { background: rgba(52,211,153,0.12); color: var(--green); }
 
+        /* ── AI SECTION ── */
+        .ai-banner {
+            background: linear-gradient(135deg, rgba(56,189,248,0.06) 0%, rgba(52,211,153,0.06) 100%);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 48px;
+            margin-bottom: 40px;
+        }
+        .ai-banner-title { font-size: 1.4rem; margin-bottom: 16px; }
+        .ai-banner-title a { font-size: 0.8rem; font-weight: 400; }
+        .ai-banner-desc { color: var(--text-muted); margin-bottom: 24px; max-width: 700px; }
+        .ai-config { margin-top: 24px; }
+        .ai-config .code-block { max-width: 640px; }
+
         /* ── LINKS / RESOURCES ── */
         .links-columns {
             display: grid;
@@ -527,6 +542,7 @@
             <li><a href="#specs">Specs</a></li>
             <li><a href="#ecosystem">Ecosystem</a></li>
             <li><a href="#mining">Mining</a></li>
+            <li><a href="#ai">AI</a></li>
             <li><a href="#get-started">Get Started</a></li>
             <li><a href="#links">Links</a></li>
             <li><a href="https://github.com/Radiant-Core" class="nav-cta">GitHub ↗</a></li>
@@ -838,7 +854,7 @@
                 <div class="eco-icon icon-blue">&#x1f916;</div>
                 <div>
                     <h4>Radiant MCP Server</h4>
-                    <p>Model Context Protocol server for AI integration. 44 tools, 10 resources, REST API, OpenAPI spec, agent SDK with BIP39 wallet creation.</p>
+                    <p>Model Context Protocol server for AI agents. 29 MCP tools, 6 resources, 25 REST endpoints, OpenAPI 3.1 spec, SSE transport. Query chain state, tokens, WAVE names, and dMint contracts.</p>
                     <span class="eco-tag tag-ai">AI</span>
                 </div>
             </a>
@@ -897,6 +913,69 @@
                     <li><span class="algo-badge algo-token">K12</span> V2 dMint (OP_K12, 0xef)</li>
                     <li><span class="algo-badge algo-token">DAA</span> On-chain difficulty via LSHIFT/RSHIFT</li>
                 </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── AI INTEGRATION ── -->
+<hr class="section-divider">
+<section id="ai">
+    <div class="container">
+        <div class="section-header">
+            <h2>AI Integration</h2>
+            <p>First-class AI agent support via the Model Context Protocol (MCP) and a full REST API.</p>
+        </div>
+        <div class="ai-banner">
+            <h2 class="ai-banner-title">Radiant MCP Server <a href="https://github.com/Radiant-Core/radiant-mcp-server">GitHub ↗</a></h2>
+            <p class="ai-banner-desc">Connect any MCP-compatible AI agent (Windsurf, Claude Desktop, Cursor) to the Radiant blockchain. Also available as a standard HTTP REST API for any client.</p>
+            <div class="opcode-grid">
+                <div class="opcode-card">
+                    <code>Blockchain (8)</code>
+                    <h4>Chain &amp; Address Tools</h4>
+                    <p>Chain info, balances, UTXOs, transaction history, block headers, fee estimation, broadcast signed transactions.</p>
+                </div>
+                <div class="opcode-card">
+                    <code>Glyph Tokens (9)</code>
+                    <h4>Token Operations</h4>
+                    <p>Get token info, list by address, search by name, decode CBOR metadata, validate protocol combinations, parse envelopes.</p>
+                </div>
+                <div class="opcode-card">
+                    <code>dMint Mining (4)</code>
+                    <h4>Mineable Token Discovery</h4>
+                    <p>List active dMint contracts, filter by algorithm (SHA256d/Blake3/K12), rank by profitability.</p>
+                </div>
+                <div class="opcode-card">
+                    <code>WAVE Naming (5)</code>
+                    <h4>Name Resolution</h4>
+                    <p>Resolve WAVE names, check availability, reverse lookup, list subdomains, naming system statistics.</p>
+                </div>
+                <div class="opcode-card">
+                    <code>REST API (25)</code>
+                    <h4>HTTP Endpoints</h4>
+                    <p>Full REST API with OpenAPI 3.1 spec. Same functionality accessible to any HTTP client, web app, or backend service.</p>
+                </div>
+                <div class="opcode-card">
+                    <code>Resources (6)</code>
+                    <h4>Static Reference Data</h4>
+                    <p>Chain overview, opcode reference (including V2), Glyph protocols, network parameters, SDK quickstart, AI knowledge base.</p>
+                </div>
+            </div>
+            <div class="ai-config">
+                <div class="code-block">// MCP config (Windsurf / Claude Desktop)
+{
+  "mcpServers": {
+    "radiant": {
+      "command": "node",
+      "args": ["/path/to/radiant-mcp-server/dist/index.js"],
+      "env": {
+        "ELECTRUMX_HOST": "electrumx.radiant4people.com",
+        "ELECTRUMX_PORT": "50012",
+        "ELECTRUMX_SSL": "true"
+      }
+    }
+  }
+}</div>
             </div>
         </div>
     </div>
