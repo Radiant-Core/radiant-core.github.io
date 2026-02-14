@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radiant-Core</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+        }
+        nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+        }
+        nav li {
+            margin-left: 20px;
+        }
+        nav a {
+            color: #00aaff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .hero {
+            padding: 80px 0;
+        }
+        .logo {
+            max-width: 200px;
+            margin-bottom: 20px;
+        }
+        .tagline {
+            font-size: 1.5em;
+            margin-bottom: 40px;
+        }
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        .feature-block {
+            padding: 20px;
+            border: 1px solid #333;
+            border-radius: 8px;
+        }
+        .quick-facts {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        .fact-block {
+            padding: 20px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            text-align: left;
+        }
+        footer {
+            text-align: center;
+            padding: 20px 0;
+            border-top: 1px solid #333;
+            font-size: 0.8em;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <nav>
+                <ul>
+                    <li><a href="#home">Home</a></li>
+                    <li><a href="#guides">Guides</a></li>
+                    <li><a href="#links">Links</a></li>
+                    <li><a href="https://github.com/Radiant-Core/Radiant-Core">Core Node</a></li>
+                    <li><a href="https://github.com/Radiant-Core/RXinDexer">RXinDexer</a></li>
+                    <li><a href="#nodes">Nodes</a></li>
+                    <li><a href="#participate">Participate</a></li>
+                    <li><a href="#rxid">Get RXD</a></li>
+                </ul>
+            </nav>
+        </header>
+        <section class="hero">
+            <img src="https://raw.githubusercontent.com/TheArtofSatoshi/Shared/main/radiant-core-logo.png" alt="Radiant-Core Logo" class="logo">
+            <img src="https://raw.githubusercontent.com/TheArtofSatoshi/Shared/main/radiant-core-logo.png" alt="Radiant-Core Logo" class="logo">
+            <p class="tagline">Decentralized, Secure, V2 Ready Node Software</p>
+        </section>
+        <section class="features">
+            <div class="feature-block">
+                <h3>Onchain</h3>
+                <p>Native Asset Indexing</p>
+                <p>Induction Proofs</p>
+                <p>Trustless interaction</p>
+            </div>
+            <div class="feature-block">
+                <h3>Performance</h3>
+                <p>Ultra Fast Transactions</p>
+                <p>4,000 TPS</p>
+                <p>Low fees to do more</p>
+            </div>
+            <div class="feature-block">
+                <h3>Functionality</h3>
+                <p>Build on Radiant today</p>
+                <p>Smart Contracts</p>
+                <p>Creator and dev friendly</p>
+            </div>
+            <div class="feature-block">
+                <h3>Scalability</h3>
+                <p>Future-Proof Design</p>
+                <p>Highly Scalable</p>
+                <p>Grows with demand</p>
+            </div>
+        </section>
+        <section class="quick-facts">
+            <div class="fact-block">
+                <h4>Radiant RXD</h4>
+                <p>21 billion coins</p>
+                <p>Total maximum supply</p>
+            </div>
+            <div class="fact-block">
+                <h4>Photons</h4>
+                <p>100 million</p>
+                <p>Sub units per RXD coin</p>
+            </div>
+            <div class="fact-block">
+                <h4>PoW Consensus</h4>
+                <p>Layer 1 blockchain</p>
+                <p>UTXO + Account based</p>
+            </div>
+            <div class="fact-block">
+                <h4>Induction Proofs</h4>
+                <p>Onchain indexing</p>
+                <p>Native validation of assets</p>
+            </div>
+            <div class="fact-block">
+                <h4>Low fees. High tps</h4>
+                <p>4,000 TX per sec</p>
+                <p>Designed for 500k+ TPS</p>
+            </div>
+            <div class="fact-block">
+                <h4>Block Time</h4>
+                <p>5 mins (300 secs)</p>
+                <p>Instant txts with 0-conf</p>
+            </div>
+            <div class="fact-block">
+                <h4>Mining Algorithm</h4>
+                <p>SHA512/256d</p>
+                <p>GPU/FPGA/ASIC</p>
+            </div>
+            <div class="fact-block">
+                <h4>Smart Contracts</h4>
+                <p>Turing Complete</p>
+                <p>Extensive Opcodes</p>
+            </div>
+            <div class="fact-block">
+                <h4>Highly Scalable</h4>
+                <p>System design</p>
+                <p>Multiple Node types</p>
+            </div>
+            <div class="fact-block">
+                <h4>Block Size</h4>
+                <p>256mb initial</p>
+                <p>Designed to achieve 10gb</p>
+            </div>
+            <div class="fact-block">
+                <h4>Genesis Block</h4>
+                <p>20 June 2022</p>
+                <p>Fair launch. No pre-mine.</p>
+            </div>
+            <div class="fact-block">
+                <h4>Halving Schedule</h4>
+                <p>Every 2 years</p>
+                <p>50k RXD per block start</p>
+            </div>
+        </section>
+        <footer>
+            <p>&copy; 2024 Radiant-Core. All rights reserved.</p>
+        </footer>
+    </div>
+</body>
+</html>
