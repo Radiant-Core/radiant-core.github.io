@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Token Creation Guide — Radiant Core Docs</title>
+    <meta name="description" content="Create tokens on Radiant: NFTs, fungible tokens, and dMint contracts using Photonic Wallet, CLI, radiantjs, or RadiantScript.">
+    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="stylesheet" href="docs.css">
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="container">
+        <a href="../" class="nav-brand"><img src="../radiant-logo-darkmode.jpg" alt="Radiant"> Radiant Core</a>
+        <button class="hamburger" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Menu">&#9776;</button>
+        <ul class="nav-links">
+            <li><a href="../#features">Features</a></li>
+            <li><a href="../#v2-upgrade">V2 Upgrade</a></li>
+            <li><a href="./" class="nav-active">Docs</a></li>
+            <li><a href="../#ecosystem">Ecosystem</a></li>
+            <li><a href="../#mining">Mining</a></li>
+            <li><a href="../explorer/">Explorer</a></li>
+            <li><a href="https://github.com/Radiant-Core" class="nav-cta">GitHub ↗</a></li>
+        </ul>
+    </div>
+</nav>
+
+<div class="doc-container">
+    <div class="breadcrumb"><a href="./">Docs</a> <span class="sep">/</span> <span>Token Creation Guide</span></div>
+
+    <div class="doc-header">
+        <h1>Radiant Token Creation Guide</h1>
+        <div class="doc-meta"><span>Version 1.0</span> <span>Last Updated: February 2026</span></div>
+    </div>
+
+    <div class="doc-content">
+
+<h2 id="overview">Overview</h2>
+<p>This guide covers creating tokens on Radiant using the Glyph protocol. Whether you want to create a simple NFT, launch a fungible token, or set up a mineable token contract, this document has you covered.</p>
+
+<hr>
+
+<h2 id="token-types">Token Types</h2>
+
+<table>
+<thead><tr><th>Type</th><th>Protocol ID</th><th>Use Case</th><th>Reference Type</th></tr></thead>
+<tbody>
+<tr><td><strong>Fungible Token (FT)</strong></td><td>1</td><td>Currencies, points, shares</td><td>Normal</td></tr>
+<tr><td><strong>Non-Fungible Token (NFT)</strong></td><td>2</td><td>Art, collectibles, certificates</td><td>Singleton</td></tr>
+<tr><td><strong>Data Token (DAT)</strong></td><td>3</td><td>Timestamps, attestations</td><td>None</td></tr>
+<tr><td><strong>Mineable Token (dMint)</strong></td><td>1 + 4</td><td>Fair launch tokens</td><td>Normal</td></tr>
+<tr><td><strong>Container</strong></td><td>2 + 7</td><td>NFT collections</td><td>Singleton</td></tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2 id="method-1">Method 1: Using Photonic Wallet (Easiest)</h2>
+
+<h3>Creating an NFT</h3>
+<ol>
+<li><strong>Open Photonic Wallet</strong> — Visit <a href="https://photonic.radiant4people.com/">photonic.radiant4people.com</a></li>
+<li><strong>Navigate to Mint</strong> — Click "Mint" tab → Select "NFT"</li>
+<li><strong>Fill Token Details</strong>: Name, Description, Image upload</li>
+<li><strong>Advanced Options</strong> (optional): Container, Royalty percentage, Custom attributes</li>
+<li><strong>Mint</strong> — Review transaction, confirm and sign, wait for confirmation</li>
+</ol>
+
+<h3>Creating a Fungible Token</h3>
+<ol>
+<li>Select "Fungible Token" in Mint tab</li>
+<li>Configure: Name, Ticker, Decimals (8 default), Total Supply</li>
+<li>Choose distribution: <strong>Fixed Supply</strong> (all to wallet) or <strong>dMint</strong> (proof-of-work)</li>
+<li>Mint and distribute</li>
+</ol>
+
+<h3>Creating a Mineable Token (dMint)</h3>
+
+<blockquote>
+<p><strong>V2 Hard Fork (Block 410,000):</strong> Starting with Radiant Core 2.1, v2 dMint contracts validate proof-of-work <strong>entirely on-chain</strong> using OP_BLAKE3 and OP_K12 hash opcodes. The difficulty adjustment (DAA) is also computed on-chain via OP_LSHIFT/OP_RSHIFT. This eliminates indexer trust dependency and prevents griefing. v1 SHA256d tokens continue to work unchanged.</p>
+</blockquote>
+
+<ol>
+<li>Select "dMint Contract" in Mint tab</li>
+<li>Configure Mining Parameters:
+<pre><code>Token Name: Mineable Coin
+Ticker: MINE
+Total Supply: 21,000,000
+
+Algorithm: Blake3 (recommended)
+Difficulty: 10,000 (starting)
+DAA Mode: ASERT (recommended)
+Target Time: 60 seconds
+
+Reward: 100 tokens per solve
+Max Height: 210,000</code></pre>
+</li>
+<li>Deploy Contract — creates token reference, deploys with on-chain PoW validation</li>
+</ol>
+
+<hr>
+
+<h2 id="method-2">Method 2: Using Photonic CLI (Batch Operations)</h2>
+
+<h3>Setup</h3>
+<pre><code>git clone https://github.com/Radiant-Core/Photonic-Wallet
+cd Photonic-Wallet/packages/cli
+pnpm install
+pnpm build</code></pre>
+
+<h3>Batch Mint NFT Collection</h3>
+<pre><code># Create wallet
+node dist/cli.js wallet create --output wallet.json
+
+# Get address and fund it
+node dist/cli.js wallet address --wallet wallet.json
+
+# Prepare batch file (tokens.json)
+{
+  "collection": {
+    "name": "My Collection",
+    "description": "A collection of 100 NFTs"
+  },
+  "tokens": [
+    { "name": "Item #1", "image": "./images/1.png", "attributes": { "rarity": "common" } },
+    { "name": "Item #2", "image": "./images/2.png", "attributes": { "rarity": "rare" } }
+  ]
+}
+
+# Mint batch
+node dist/cli.js mint batch \
+  --wallet wallet.json \
+  --input tokens.json \
+  --output results.json</code></pre>
+
+<hr>
+
+<h2 id="method-3">Method 3: Using radiantjs (Programmatic)</h2>
+
+<h3>NFT Creation</h3>
+<pre><code>const radiant = require('@radiantblockchain/radiantjs');
+const CBOR = require('cbor');
+const crypto = require('crypto');
+
+async function createNFT(privateKey, utxos, metadata, fileBuffer) {
+  // 1. Prepare metadata
+  const glyphMetadata = {
+    v: 2, type: 'nft', p: [2],
+    name: metadata.name,
+    desc: metadata.description,
+    content: {
+      primary: {
+        path: 'image.png', mime: 'image/png',
+        size: fileBuffer.length,
+        hash: { algo: 'sha256', hex: crypto.createHash('sha256').update(fileBuffer).digest('hex') },
+        storage: 'inline'
+      }
+    }
+  };
+
+  // 2. Encode and hash
+  const encodedMetadata = CBOR.encode(glyphMetadata);
+  const commitHash = crypto.createHash('sha256').update(encodedMetadata).digest();
+
+  // 3. Build commit transaction
+  const commitTx = new radiant.Transaction()
+    .from(utxos[0])
+    .addOutput(new radiant.Transaction.Output({
+      script: buildCommitScript(commitHash), satoshis: 1000
+    }))
+    .change(privateKey.toAddress()).fee(500).sign(privateKey);
+
+  // 4. Broadcast commit
+  const commitTxId = await broadcast(commitTx.serialize());
+
+  // 5. Build reveal transaction with token reference
+  const tokenRef = Buffer.concat([
+    Buffer.from(commitTxId, 'hex').reverse(), Buffer.alloc(4)
+  ]);
+
+  // 6. Build and broadcast reveal
+  const revealTx = new radiant.Transaction()
+    .from({ txId: commitTxId, outputIndex: 0, script: buildCommitScript(commitHash), satoshis: 1000 })
+    .addOutput(new radiant.Transaction.Output({
+      script: buildNFTScript(tokenRef, privateKey.toAddress()), satoshis: 546
+    }))
+    .addOutput(new radiant.Transaction.Output({
+      script: buildRevealScript(encodedMetadata, fileBuffer), satoshis: 0
+    }))
+    .change(privateKey.toAddress()).fee(500).sign(privateKey);
+
+  return { commitTxId, revealTxId: await broadcast(revealTx.serialize()) };
+}</code></pre>
+
+<hr>
+
+<h2 id="method-4">Method 4: Using RadiantScript (Smart Contracts)</h2>
+
+<h3>Custom NFT with Royalties</h3>
+<pre><code>// RoyaltyNFT.rxd
+contract RoyaltyNFT(
+    bytes36 TOKEN_REF, bytes20 OWNER_PKH,
+    bytes20 CREATOR_PKH, int ROYALTY_BPS  // 500 = 5%
+)
+function (sig s, pubkey pk) {
+    require(hash160(pk) == OWNER_PKH);
+    require(checkSig(s, pk));
+    stateSeparator;
+    bytes36 ref = pushInputRefSingleton(TOKEN_REF);
+
+    if (tx.outputs[1].value > 0) {
+        int salePrice = tx.outputs[1].value;
+        int royalty = salePrice * ROYALTY_BPS / 10000;
+        require(tx.outputs[2].value >= royalty);
+        bytes outScript = tx.outputs[2].lockingBytecode;
+        require(hash160(outScript.slice(3, 23)) == CREATOR_PKH);
+    }
+}</code></pre>
+
+<h3>Compile and Deploy</h3>
+<pre><code>npx rxdc RoyaltyNFT.rxd -o RoyaltyNFT.json
+
+const artifact = require('./RoyaltyNFT.json');
+const lockingScript = artifact.generateLockingScript([
+  tokenRef, ownerPkh, creatorPkh, 500  // 5%
+]);</code></pre>
+
+<hr>
+
+<h2 id="metadata-schema">Token Metadata Schema</h2>
+
+<h3>Required Fields</h3>
+<pre><code>{
+  "v": 2,           // Version (always 2 for Glyph v2)
+  "type": "nft",    // Token type
+  "p": [2]          // Protocol IDs array
+}</code></pre>
+
+<h3>Common Fields</h3>
+<pre><code>{
+  "name": "Token Name",
+  "desc": "Token description (up to 4KB)",
+  "created": "2026-01-27T12:00:00Z",
+  "creator": { "pubkey": "02abc123...", "sig": "signature_hex" }
+}</code></pre>
+
+<h3>Content Fields</h3>
+<pre><code>{
+  "content": {
+    "primary": {
+      "path": "artwork.png", "mime": "image/png",
+      "size": 102400,
+      "hash": { "algo": "sha256", "hex": "..." },
+      "storage": "inline"
+    },
+    "files": [{ "path": "metadata.json", "mime": "application/json", "storage": "inline" }],
+    "refs": [{ "path": "video.mp4", "uri": "ipfs://QmVideo...", "mime": "video/mp4" }]
+  }
+}</code></pre>
+
+<h3>dMint-Specific Fields</h3>
+<pre><code>{
+  "dmint": {
+    "algorithm": "blake3",  // sha256d, blake3, k12
+    "daa": {
+      "mode": "asert",      // fixed, epoch, asert, lwma, schedule
+      "baseDifficulty": 10000,
+      "targetMintTime": 60,
+      "halflife": 3600
+    },
+    "maxHeight": 210000,
+    "reward": 100,
+    "premine": 0
+  }
+}</code></pre>
+
+<hr>
+
+<h2 id="storage">Storage Options</h2>
+
+<table>
+<thead><tr><th>Storage</th><th>Pros</th><th>Cons</th><th>Best For</th></tr></thead>
+<tbody>
+<tr><td><strong>inline</strong></td><td>Permanent, censorship-resistant</td><td>Size limited, costs more</td><td>Small images, important data</td></tr>
+<tr><td><strong>ipfs</strong></td><td>Unlimited size, decentralized</td><td>May become unavailable</td><td>Large media files</td></tr>
+<tr><td><strong>ref</strong> (URL)</td><td>Easy setup</td><td>Centralized, may break</td><td>Temporary, high-volume</td></tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2 id="size-limits">Size Limits</h2>
+
+<table>
+<thead><tr><th>Component</th><th>Limit</th></tr></thead>
+<tbody>
+<tr><td>Metadata total</td><td>256 KB</td></tr>
+<tr><td>Single inline file</td><td>1 MB</td></tr>
+<tr><td>Total inline content</td><td>10 MB</td></tr>
+<tr><td>Name field</td><td>256 bytes</td></tr>
+<tr><td>Description field</td><td>4 KB</td></tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2 id="best-practices">Best Practices</h2>
+
+<h3>Token Creation</h3>
+<ol>
+<li><strong>Use descriptive names</strong> — Clear, searchable</li>
+<li><strong>Include previews</strong> — Thumbnails load faster</li>
+<li><strong>Hash all content</strong> — Verify integrity</li>
+<li><strong>Set appropriate policies</strong> — Transferable, renderable flags</li>
+<li><strong>Consider royalties</strong> — Protect creator rights</li>
+</ol>
+
+<h3>For Collections</h3>
+<ol>
+<li>Create container first (parent token for organization)</li>
+<li>Use consistent metadata structure across items</li>
+<li>Number sequentially with <code>index</code> field</li>
+<li>Batch mint for efficiency</li>
+</ol>
+
+<h3>Security</h3>
+<ol>
+<li>Test on testnet first — never mainnet experiments</li>
+<li>Verify addresses — double-check recipients</li>
+<li>Backup keys — especially for valuable tokens</li>
+<li>Review transactions — before signing</li>
+</ol>
+
+<hr>
+
+<h2 id="troubleshooting">Troubleshooting</h2>
+
+<table>
+<thead><tr><th>Issue</th><th>Solution</th></tr></thead>
+<tbody>
+<tr><td>"Transaction rejected"</td><td>Check balance for fees; verify UTXO not spent; ensure valid CBOR</td></tr>
+<tr><td>"Token not appearing"</td><td>Wait for confirmation; check correct network; verify ElectrumX connection</td></tr>
+<tr><td>"Invalid metadata"</td><td>Validate CBOR encoding; check required fields; verify protocol combination</td></tr>
+<tr><td>"High fees"</td><td>Large files increase tx size; consider IPFS for media >100KB; consolidate UTXOs</td></tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2 id="resources">Resources</h2>
+<table>
+<thead><tr><th>Resource</th><th>Link</th></tr></thead>
+<tbody>
+<tr><td>Photonic Wallet</td><td><a href="https://photonic.radiant4people.com/">photonic.radiant4people.com</a></td></tr>
+<tr><td>Glyph Explorer</td><td><a href="https://glyph-explorer.rxd-radiant.com/">glyph-explorer.rxd-radiant.com</a></td></tr>
+<tr><td>RadiantScript</td><td><a href="https://github.com/Radiant-Core/RadiantScript">github.com/Radiant-Core/RadiantScript</a></td></tr>
+<tr><td>radiantjs</td><td><a href="https://github.com/Radiant-Core/radiantjs">github.com/Radiant-Core/radiantjs</a></td></tr>
+</tbody>
+</table>
+
+<p><em>Create responsibly. All tokens are permanent on the blockchain.</em></p>
+
+    </div>
+    <div class="doc-footer">
+        <span><a href="./">← All Docs</a></span>
+        <span>&copy; 2022–2026 Radiant Core Contributors</span>
+    </div>
+</div>
+</body>
+</html>

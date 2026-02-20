@@ -1,0 +1,1352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radiant Explorer — Blockchain Explorer</title>
+    <meta name="description" content="Explore the Radiant blockchain. Search blocks, transactions, Glyph tokens, dMint contracts, and WAVE names. Powered by RXinDexer.">
+    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="../favicon-192.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+    <style>
+        :root {
+            --bg: #0a0e17;
+            --surface: #111827;
+            --surface-hover: #1a2332;
+            --border: #1e2d3d;
+            --border-light: #2a3a4d;
+            --text: #e2e8f0;
+            --text-muted: #94a3b8;
+            --accent: #38bdf8;
+            --accent-dim: #0ea5e9;
+            --accent-glow: rgba(56, 189, 248, 0.15);
+            --green: #34d399;
+            --orange: #fb923c;
+            --purple: #a78bfa;
+            --red: #f87171;
+            --yellow: #fbbf24;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", Helvetica, Arial, sans-serif;
+            background: var(--bg); color: var(--text); line-height: 1.6; min-height: 100vh;
+            display: flex; flex-direction: column;
+        }
+        a { color: var(--accent); text-decoration: none; transition: color 0.2s; }
+        a:hover { color: #7dd3fc; }
+        .container { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+        code, .mono { font-family: "SF Mono", "Fira Code", "JetBrains Mono", monospace; }
+
+        /* NAVBAR */
+        .navbar {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(10, 14, 23, 0.9);
+            -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+        }
+        .navbar .container { display: flex; align-items: center; gap: 16px; height: 64px; }
+        .nav-brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.1rem; color: var(--text); white-space: nowrap; }
+        .nav-brand img { height: 32px; width: 32px; border-radius: 6px; }
+        .nav-brand .brand-sub { color: var(--accent); font-weight: 600; }
+        .nav-links { display: flex; gap: 4px; list-style: none; flex-shrink: 0; }
+        .nav-links a { padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: 500; color: var(--text-muted); transition: all 0.2s; }
+        .nav-links a:hover, .nav-links a.active { color: var(--text); background: var(--surface); }
+        .search-wrap { flex: 1; max-width: 520px; position: relative; }
+        .search-wrap input {
+            width: 100%; padding: 9px 16px 9px 38px; border-radius: 8px;
+            border: 1px solid var(--border); background: var(--surface); color: var(--text);
+            font-size: 0.88rem; outline: none; transition: border-color 0.2s;
+        }
+        .search-wrap input:focus { border-color: var(--accent); }
+        .search-wrap input::placeholder { color: var(--text-muted); }
+        .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.9rem; pointer-events: none; }
+        .hamburger { display: none; background: none; border: none; color: var(--text); font-size: 1.5rem; cursor: pointer; }
+        .nav-right { display: flex; align-items: center; gap: 8px; }
+        .btn-icon { background: var(--surface); border: 1px solid var(--border); color: var(--text-muted); padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s; }
+        .btn-icon:hover { color: var(--text); border-color: var(--border-light); }
+
+        /* MAIN */
+        main { flex: 1; padding: 32px 0; }
+        .page-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 24px; display: flex; align-items: center; gap: 12px; }
+        .page-title .subtitle { font-size: 0.85rem; color: var(--text-muted); font-weight: 400; }
+        .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: var(--text-muted); margin-bottom: 16px; }
+        .breadcrumb a { color: var(--text-muted); }
+        .breadcrumb a:hover { color: var(--accent); }
+
+        /* STAT CARDS */
+        .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 28px; }
+        .stat-card {
+            background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+            padding: 20px; transition: border-color 0.2s;
+        }
+        .stat-card:hover { border-color: var(--border-light); }
+        .stat-card .label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 6px; }
+        .stat-card .value { font-size: 1.4rem; font-weight: 700; color: var(--accent); }
+        .stat-card .value.green { color: var(--green); }
+        .stat-card .value.purple { color: var(--purple); }
+        .stat-card .value.orange { color: var(--orange); }
+        .stat-card .note { font-size: 0.78rem; color: var(--text-muted); margin-top: 4px; }
+
+        /* TABLES */
+        .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 24px; }
+        .table-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+        .table-header h3 { font-size: 1rem; font-weight: 600; }
+        table { width: 100%; border-collapse: collapse; }
+        thead th { padding: 10px 16px; text-align: left; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); border-bottom: 1px solid var(--border); font-weight: 600; white-space: nowrap; }
+        thead th.sortable { cursor: pointer; -webkit-user-select: none; user-select: none; transition: color 0.15s; }
+        thead th.sortable:hover { color: var(--accent); }
+        thead th.sortable::after { content: '\2195'; margin-left: 4px; opacity: 0.3; font-size: 0.7rem; }
+        thead th.sortable.sort-asc::after { content: '\2191'; opacity: 0.8; color: var(--accent); }
+        thead th.sortable.sort-desc::after { content: '\2193'; opacity: 0.8; color: var(--accent); }
+        tbody td { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 0.88rem; vertical-align: middle; }
+        tbody tr:last-child td { border-bottom: none; }
+        tbody tr:hover { background: var(--surface-hover); }
+        .hash-cell { font-family: "SF Mono", monospace; font-size: 0.82rem; color: var(--accent); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .hash-cell a { color: var(--accent); }
+        .right { text-align: right; }
+
+        /* DETAIL PANEL */
+        .detail-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 24px; }
+        .detail-row { display: flex; padding: 12px 20px; border-bottom: 1px solid var(--border); font-size: 0.88rem; }
+        .detail-row:last-child { border-bottom: none; }
+        .detail-label { width: 180px; flex-shrink: 0; color: var(--text-muted); font-weight: 500; }
+        .detail-value { flex: 1; word-break: break-all; }
+        .detail-value .mono { font-size: 0.84rem; color: var(--accent); }
+
+        /* BADGES */
+        .badge { display: inline-block; padding: 2px 10px; border-radius: 4px; font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+        .badge-ft { background: rgba(52,211,153,0.12); color: var(--green); }
+        .badge-nft { background: rgba(167,139,250,0.12); color: var(--purple); }
+        .badge-dmint { background: rgba(56,189,248,0.12); color: var(--accent); }
+        .badge-dat { background: rgba(251,146,60,0.12); color: var(--orange); }
+        .badge-wave { background: rgba(56,189,248,0.12); color: var(--accent); }
+        .badge-container { background: rgba(52,211,153,0.12); color: var(--green); }
+        .badge-authority { background: rgba(248,113,113,0.12); color: var(--red); }
+        .badge-success { background: rgba(52,211,153,0.12); color: var(--green); }
+        .badge-pending { background: rgba(251,146,60,0.12); color: var(--orange); }
+        .badge-active { background: rgba(52,211,153,0.12); color: var(--green); }
+
+        /* TABS */
+        .tabs { display: flex; gap: 4px; margin-bottom: 20px; flex-wrap: wrap; }
+        .tab { padding: 7px 16px; border-radius: 6px; font-size: 0.85rem; font-weight: 500; color: var(--text-muted); cursor: pointer; transition: all 0.2s; border: 1px solid transparent; background: none; }
+        .tab:hover { color: var(--text); background: var(--surface); }
+        .tab.active { color: var(--accent); background: var(--accent-glow); border-color: rgba(56,189,248,0.2); }
+
+        /* COPY BUTTON */
+        .copy-btn { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; color: var(--text-muted); cursor: pointer; background: none; border: 1px solid var(--border); transition: all 0.2s; }
+        .copy-btn:hover { color: var(--accent); border-color: var(--accent); }
+        .copy-btn.copied { color: var(--green); border-color: var(--green); }
+
+        /* PAGINATION */
+        .pagination { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 16px; }
+        .page-btn { padding: 6px 14px; border-radius: 6px; font-size: 0.85rem; background: var(--surface); border: 1px solid var(--border); color: var(--text-muted); cursor: pointer; transition: all 0.2s; }
+        .page-btn:hover:not(:disabled) { color: var(--text); border-color: var(--border-light); }
+        .page-btn:disabled { opacity: 0.4; cursor: default; }
+        .page-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-glow); }
+        .page-info { font-size: 0.82rem; color: var(--text-muted); }
+
+        /* LOADING / ERROR / EMPTY */
+        .loading { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; }
+        .spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text { margin-top: 16px; color: var(--text-muted); font-size: 0.88rem; }
+        .error-box { background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.2); border-radius: 10px; padding: 24px; text-align: center; margin: 20px 0; }
+        .error-box .title { color: var(--red); font-weight: 600; margin-bottom: 8px; }
+        .error-box .msg { color: var(--text-muted); font-size: 0.88rem; }
+        .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
+        .empty-state .icon { font-size: 2.5rem; margin-bottom: 12px; opacity: 0.5; }
+
+        /* CONFIG BANNER */
+        .config-banner { background: linear-gradient(135deg, rgba(56,189,248,0.08), rgba(167,139,250,0.08)); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+        .config-banner h3 { font-size: 1rem; margin-bottom: 8px; }
+        .config-banner p { color: var(--text-muted); font-size: 0.88rem; margin-bottom: 16px; }
+        .config-row { display: flex; gap: 8px; }
+        .config-row input { flex: 1; padding: 8px 14px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 0.88rem; outline: none; }
+        .config-row input:focus { border-color: var(--accent); }
+        .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 20px; border-radius: 6px; font-weight: 600; font-size: 0.88rem; border: none; cursor: pointer; transition: all 0.2s; }
+        .btn-primary { background: var(--accent-dim); color: #fff; }
+        .btn-primary:hover { background: var(--accent); }
+        .btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+        .btn-secondary:hover { background: var(--surface-hover); }
+        .btn-sm { padding: 5px 12px; font-size: 0.82rem; }
+
+        /* TOKEN GRID */
+        .token-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .token-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; transition: all 0.2s; cursor: pointer; }
+        .token-card:hover { border-color: var(--border-light); transform: translateY(-1px); }
+        .token-card .top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+        .token-card .name { font-weight: 600; font-size: 1rem; }
+        .token-card .ticker { color: var(--text-muted); font-size: 0.82rem; }
+        .token-card .ref { font-family: monospace; font-size: 0.75rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 6px; }
+        .token-card .meta { display: flex; gap: 12px; margin-top: 10px; font-size: 0.8rem; color: var(--text-muted); }
+
+        /* SEARCH RESULTS */
+        .search-section { margin-bottom: 32px; }
+        .search-section h3 { font-size: 1rem; margin-bottom: 12px; color: var(--text-muted); }
+
+        /* FOOTER */
+        footer { border-top: 1px solid var(--border); padding: 24px 0; margin-top: auto; }
+        .footer-inner { display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); flex-wrap: wrap; gap: 12px; }
+
+        /* RESPONSIVE */
+        @media (max-width: 900px) {
+            .nav-links { display: none; }
+            .nav-links.open { display: flex; flex-direction: column; position: absolute; top: 64px; left: 0; right: 0; background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 24px; z-index: 99; }
+            .hamburger { display: block; }
+            .search-wrap { max-width: 100%; }
+            .detail-row { flex-direction: column; gap: 4px; }
+            .detail-label { width: auto; }
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
+            .token-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 600px) {
+            .stats-row { grid-template-columns: 1fr; }
+            .navbar .container { flex-wrap: wrap; height: auto; padding: 12px 16px; gap: 8px; }
+            .search-wrap { order: 3; width: 100%; max-width: 100%; }
+            table { font-size: 0.82rem; }
+            thead th, tbody td { padding: 8px 10px; }
+        }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        /* TX IO */
+        .io-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: start; margin-bottom: 24px; }
+        .io-arrow { display: flex; align-items: center; justify-content: center; padding-top: 60px; font-size: 1.5rem; color: var(--text-muted); }
+        .io-box { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+        .io-box .io-title { padding: 12px 16px; font-weight: 600; font-size: 0.88rem; border-bottom: 1px solid var(--border); }
+        .io-item { padding: 10px 16px; border-bottom: 1px solid var(--border); font-size: 0.84rem; }
+        .io-item:last-child { border-bottom: none; }
+        .io-item .io-idx { color: var(--text-muted); font-size: 0.75rem; }
+        .io-item .io-hash { font-family: monospace; font-size: 0.78rem; color: var(--accent); word-break: break-all; }
+        .io-item .io-val { color: var(--green); font-weight: 600; margin-top: 2px; }
+        .io-item .io-script { font-family: monospace; font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; word-break: break-all; }
+        @media (max-width: 900px) {
+            .io-grid { grid-template-columns: 1fr; }
+            .io-arrow { padding: 8px 0; transform: rotate(90deg); }
+        }
+
+        /* WAVE INPUT */
+        .wave-search { display: flex; gap: 8px; margin-bottom: 24px; max-width: 500px; }
+        .wave-search input { flex: 1; padding: 10px 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 0.92rem; outline: none; }
+        .wave-search input:focus { border-color: var(--accent); }
+
+        /* MARKET DATA */
+        .market-hero { background: linear-gradient(135deg, rgba(56,189,248,0.06), rgba(167,139,250,0.06)); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+        .market-hero .price-row { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+        .market-hero .price-main { font-size: 2rem; font-weight: 800; color: var(--text); }
+        .market-hero .price-btc { font-size: 1rem; color: var(--text-muted); }
+        .price-change { display: inline-flex; align-items: center; gap: 3px; padding: 3px 10px; border-radius: 4px; font-size: 0.82rem; font-weight: 600; }
+        .price-change.up { background: rgba(52,211,153,0.12); color: var(--green); }
+        .price-change.down { background: rgba(248,113,113,0.12); color: var(--red); }
+        .market-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+        .market-item { text-align: center; }
+        .market-item .mi-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-muted); margin-bottom: 4px; }
+        .market-item .mi-value { font-size: 1.1rem; font-weight: 700; color: var(--text); }
+        .market-item .mi-sub { font-size: 0.75rem; color: var(--text-muted); }
+
+        /* SECTION HEADERS */
+        .section-title { font-size: 1.1rem; font-weight: 700; margin: 28px 0 16px; display: flex; align-items: center; gap: 10px; }
+        .section-title .sec-icon { font-size: 1.2rem; }
+
+        /* NETWORK SUMMARY GRID */
+        .net-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .net-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; }
+        .net-panel h4 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 14px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+        .net-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; font-size: 0.88rem; }
+        .net-row .nr-label { color: var(--text-muted); }
+        .net-row .nr-value { font-weight: 600; color: var(--text); }
+
+        /* MEMPOOL BAR */
+        .mempool-bar { height: 24px; border-radius: 6px; overflow: hidden; display: flex; margin: 8px 0; background: var(--bg); }
+        .mempool-bar .bar-seg { height: 100%; transition: width 0.3s; }
+
+        /* EXCHANGE TICKERS */
+        .ticker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; margin-bottom: 24px; }
+        .ticker-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; }
+        .ticker-card .tc-pair { font-weight: 600; font-size: 0.92rem; }
+        .ticker-card .tc-exchange { font-size: 0.78rem; color: var(--text-muted); }
+        .ticker-card .tc-price { font-weight: 700; color: var(--green); }
+        .ticker-card .tc-vol { font-size: 0.78rem; color: var(--text-muted); }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="container">
+        <a href="../" class="nav-brand">
+            <img src="../radiant-logo-darkmode.jpg" alt="Radiant">
+            <span>Radiant</span>
+            <span class="brand-sub">Explorer</span>
+        </a>
+        <div class="search-wrap">
+            <span class="search-icon">&#x1f50d;</span>
+            <input type="text" id="globalSearch" placeholder="Search by block height, txid, token ref, name..." autocomplete="off">
+        </div>
+        <button class="hamburger" id="menuToggle" aria-label="Menu">&#9776;</button>
+        <ul class="nav-links" id="navLinks">
+            <li><a href="#/" data-nav="dashboard">Dashboard</a></li>
+            <li><a href="#/blocks" data-nav="blocks">Blocks</a></li>
+            <li><a href="#/tokens" data-nav="tokens">Tokens</a></li>
+            <li><a href="#/dmint" data-nav="dmint">dMint</a></li>
+            <li><a href="#/mempool" data-nav="mempool">Mempool</a></li>
+            <li><a href="#/wave" data-nav="wave">WAVE</a></li>
+        </ul>
+        <div class="nav-right">
+            <button class="btn-icon" onclick="showSettings()" title="API Settings">&#x2699;&#xfe0f;</button>
+        </div>
+    </div>
+</nav>
+
+<main>
+    <div class="container" id="app">
+        <div class="loading"><div class="spinner"></div><div class="loading-text">Loading explorer...</div></div>
+    </div>
+</main>
+
+<footer>
+    <div class="container">
+        <div class="footer-inner">
+            <span>&copy; 2022&ndash;2026 Radiant Core Contributors &middot; <a href="../">radiantcore.org</a></span>
+            <span>Powered by <a href="https://github.com/Radiant-Core/RXinDexer" target="_blank" rel="noopener noreferrer">RXinDexer</a></span>
+        </div>
+    </div>
+</footer>
+
+<script>
+// ─── CONFIG ───
+const DEFAULT_API = 'https://radiantcore.org/api';
+let API_BASE = localStorage.getItem('rxd_explorer_api') || DEFAULT_API;
+const app = document.getElementById('app');
+
+// ─── API CLIENT ───
+async function api(path) {
+    const url = API_BASE + path;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    return res.json();
+}
+const API = {
+    health: () => api('/health'),
+    status: () => api('/status'),
+    recentBlocks: (n = 10) => api(`/blocks/recent?limit=${n}`),
+    block: (h) => api(`/block/${h}`),
+    tx: (id) => api(`/transaction/${id}`),
+    glyphs: (limit = 50, offset = 0, type = null) => api(`/glyphs?limit=${limit}&offset=${offset}${type !== null ? `&token_type=${type}` : ''}`),
+    glyphSearch: (q, limit = 50) => api(`/glyphs/search?q=${encodeURIComponent(q)}&limit=${limit}`),
+    glyphStats: () => api('/glyphs/stats'),
+    glyph: (ref) => api(`/glyphs/${ref}`),
+    glyphsByType: (t, limit = 50, offset = 0) => api(`/glyphs/by-type/${t}?limit=${limit}&offset=${offset}`),
+    tokenHolders: (ref, limit = 50) => api(`/tokens/${ref}/holders?limit=${limit}`),
+    tokenSupply: (ref) => api(`/tokens/${ref}/supply`),
+    tokenHistory: (ref, limit = 50) => api(`/tokens/${ref}/history?limit=${limit}`),
+    tokenMetadata: (ref) => api(`/tokens/${ref}/metadata`),
+    dmintContracts: () => api('/dmint/contracts?format=extended'),
+    dmintStats: () => api('/dmint/stats'),
+    dmintProfitable: (n = 20) => api(`/dmint/profitable?limit=${n}`),
+    dmintAlgorithms: () => api('/dmint/algorithms'),
+    v2Status: () => api('/v2/activation-status'),
+    waveResolve: (name) => api(`/wave/resolve/${encodeURIComponent(name)}`),
+    waveAvailable: (name) => api(`/wave/available/${encodeURIComponent(name)}`),
+    waveStats: () => api('/wave/stats'),
+    mempoolStats: () => api('/mempool/stats'),
+    mempoolInfo: () => api('/mempool/info'),
+};
+
+// ─── COINGECKO ───
+const COINGECKO_CACHE_KEY = 'rxd_cg_cache';
+const COINGECKO_CACHE_TTL = 120000;
+async function fetchCoinGecko() {
+    try {
+        const cached = JSON.parse(localStorage.getItem(COINGECKO_CACHE_KEY) || 'null');
+        if (cached && Date.now() - cached.ts < COINGECKO_CACHE_TTL) return cached.data;
+    } catch(e) {}
+    try {
+        const res = await fetch('https://api.coingecko.com/api/v3/coins/radiant?localization=false&tickers=true&market_data=true&community_data=false&developer_data=false&sparkline=false');
+        if (!res.ok) throw new Error('CoinGecko ' + res.status);
+        const data = await res.json();
+        try { localStorage.setItem(COINGECKO_CACHE_KEY, JSON.stringify({ ts: Date.now(), data })); } catch(e) {}
+        return data;
+    } catch (e) { console.warn('CoinGecko fetch failed:', e); return null; }
+}
+
+// ─── UTILITIES ───
+function truncHash(h, n = 8) { if (!h) return '—'; return h.length > n * 2 + 3 ? h.slice(0, n) + '...' + h.slice(-n) : h; }
+function fmtNum(n) { if (n == null) return '—'; return Number(n).toLocaleString(); }
+function fmtRXD(photons) { if (photons == null) return '—'; return (photons / 1e8).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 8 }) + ' RXD'; }
+function timeAgo(ts) {
+    if (!ts) return '—';
+    const s = Math.floor(Date.now() / 1000 - ts);
+    if (s < 60) return s + 's ago';
+    if (s < 3600) return Math.floor(s / 60) + 'm ago';
+    if (s < 86400) return Math.floor(s / 3600) + 'h ago';
+    return Math.floor(s / 86400) + 'd ago';
+}
+function fmtDate(ts) { if (!ts) return '—'; return new Date(ts * 1000).toLocaleString(); }
+function reverseHex(hex) { return hex.match(/.{2}/g).reverse().join(''); }
+function fmtUSD(n, dec = 6) { if (n == null) return '—'; return '$' + Number(n).toLocaleString(undefined, { minimumFractionDigits: dec > 4 ? 4 : 2, maximumFractionDigits: dec }); }
+function fmtPct(n) { if (n == null) return '—'; const s = Number(n).toFixed(2); return (n >= 0 ? '+' : '') + s + '%'; }
+function pctBadge(n) { if (n == null) return ''; const cls = n >= 0 ? 'up' : 'down'; const arrow = n >= 0 ? '&#x25B2;' : '&#x25BC;'; return `<span class="price-change ${cls}">${arrow} ${Math.abs(n).toFixed(2)}%</span>`; }
+function fmtCompact(n) { if (n == null) return '—'; if (n >= 1e12) return '$' + (n/1e12).toFixed(2) + 'T'; if (n >= 1e9) return '$' + (n/1e9).toFixed(2) + 'B'; if (n >= 1e6) return '$' + (n/1e6).toFixed(2) + 'M'; if (n >= 1e3) return '$' + (n/1e3).toFixed(2) + 'K'; return '$' + n.toFixed(2); }
+function fmtBigNum(n) { if (n == null) return '—'; n = Number(n); if (n >= 1e18) return (n/1e18).toFixed(2) + 'E'; if (n >= 1e15) return (n/1e15).toFixed(2) + 'P'; if (n >= 1e12) return (n/1e12).toFixed(2) + 'T'; if (n >= 1e9) return (n/1e9).toFixed(2) + 'B'; if (n >= 1e6) return (n/1e6).toFixed(2) + 'M'; if (n >= 1e3) return (n/1e3).toFixed(1) + 'K'; return fmtNum(n); }
+function fmtHashrate(h) { if (h >= 1e18) return (h/1e18).toFixed(2) + ' EH/s'; if (h >= 1e15) return (h/1e15).toFixed(2) + ' PH/s'; if (h >= 1e12) return (h/1e12).toFixed(2) + ' TH/s'; if (h >= 1e9) return (h/1e9).toFixed(2) + ' GH/s'; if (h >= 1e6) return (h/1e6).toFixed(2) + ' MH/s'; return h.toFixed(2) + ' H/s'; }
+function diffFromBits(bitsHex) {
+    if (!bitsHex) return null;
+    const bits = parseInt(bitsHex, 16);
+    const exp = (bits >> 24) & 0xff;
+    const mant = bits & 0x7fffff;
+    const target = mant * Math.pow(2, 8 * (exp - 3));
+    const maxTarget = 0x00000000FFFF * Math.pow(2, 208);
+    return maxTarget / target;
+}
+function hashrateFromDiff(diff) { if (!diff) return 0; return diff * Math.pow(2, 32) / 300; }
+function getBlockReward(height) {
+    const halvingInterval = 210000;
+    const halvings = Math.floor(height / halvingInterval);
+    if (halvings >= 64) return 0;
+    let reward = 50000;
+    for (let i = 0; i < halvings; i++) reward = Math.floor(reward / 2);
+    return reward;
+}
+function getHalvingInfo(height) {
+    const interval = 210000;
+    const currentEra = Math.floor(height / interval);
+    const nextHalving = (currentEra + 1) * interval;
+    const blocksRemaining = nextHalving - height;
+    const secondsPerBlock = 300;
+    const estDate = new Date(Date.now() + blocksRemaining * secondsPerBlock * 1000);
+    return { era: currentEra + 1, nextHalving, blocksRemaining, estDate, reward: getBlockReward(height) };
+}
+function fmtSupplyNum(n) { if (n >= 1e9) return (n/1e9).toFixed(3) + 'B'; if (n >= 1e6) return (n/1e6).toFixed(2) + 'M'; return fmtNum(n); }
+
+function parseHeader(hex) {
+    if (!hex || hex.length < 160) return null;
+    return {
+        version: parseInt(reverseHex(hex.slice(0, 8)), 16),
+        prevHash: reverseHex(hex.slice(8, 72)),
+        merkleRoot: reverseHex(hex.slice(72, 136)),
+        timestamp: parseInt(reverseHex(hex.slice(136, 144)), 16),
+        bits: reverseHex(hex.slice(144, 152)),
+        nonce: parseInt(reverseHex(hex.slice(152, 160)), 16),
+    };
+}
+
+const TOKEN_TYPES = { 1: 'FT', 2: 'NFT', 3: 'DAT', 4: 'dMint', 5: 'WAVE', 6: 'Container', 7: 'Authority' };
+const TYPE_CLASSES = { 1: 'badge-ft', 2: 'badge-nft', 3: 'badge-dat', 4: 'badge-dmint', 5: 'badge-wave', 6: 'badge-container', 7: 'badge-authority' };
+const TYPE_STR_TO_ID = { 'FT': 1, 'NFT': 2, 'DAT': 3, 'dMint': 4, 'DMINT': 4, 'WAVE': 5, 'Container': 6, 'Authority': 7 };
+function resolveTypeId(t) {
+    if (t.type_id != null) return t.type_id;
+    if (typeof t.type === 'number') return t.type;
+    if (typeof t.type === 'string') return TYPE_STR_TO_ID[t.type] || 0;
+    if (t.token_type != null) return t.token_type;
+    if (t.protocols) { if (t.protocols.includes(1)) return 1; if (t.protocols.includes(2)) return 2; }
+    return 0;
+}
+function typeBadge(typeId) {
+    if (typeof typeId === 'string') typeId = TYPE_STR_TO_ID[typeId] || 0;
+    const name = TOKEN_TYPES[typeId] || `Type ${typeId}`;
+    const cls = TYPE_CLASSES[typeId] || 'badge-dat';
+    return `<span class="badge ${cls}">${name}</span>`;
+}
+function refTo72Hex(ref) {
+    if (!ref) return '';
+    if (/^[a-fA-F0-9]{72}$/.test(ref)) return ref;
+    const parts = ref.split('_');
+    if (parts.length === 2 && /^[a-fA-F0-9]{64}$/.test(parts[0])) {
+        const displayTxid = parts[0];
+        const rawTxid = displayTxid.match(/.{2}/g).reverse().join('');
+        const vout = parseInt(parts[1], 10);
+        const voutLE = vout.toString(16).padStart(8, '0').match(/.{2}/g).reverse().join('');
+        return rawTxid + voutLE;
+    }
+    return ref;
+}
+function refToDisplay(ref) {
+    if (!ref) return '';
+    if (ref.includes('_')) return ref;
+    if (/^[a-fA-F0-9]{72}$/.test(ref)) {
+        const rawTxid = ref.slice(0, 64);
+        const displayTxid = rawTxid.match(/.{2}/g).reverse().join('');
+        const voutLE = ref.slice(64, 72);
+        const vout = parseInt(voutLE.match(/.{2}/g).reverse().join(''), 16);
+        return displayTxid + '_' + vout;
+    }
+    return ref;
+}
+
+function copyBtn(text) { return `<button class="copy-btn" onclick="copyText(this,'${text}')">Copy</button>`; }
+function copyText(btn, text) {
+    navigator.clipboard.writeText(text).then(() => {
+        btn.classList.add('copied'); btn.textContent = 'Copied!';
+        setTimeout(() => { btn.classList.remove('copied'); btn.textContent = 'Copy'; }, 1500);
+    });
+}
+
+function html(tag, cls, content) { return `<${tag} class="${cls}">${content}</${tag}>`; }
+function loading() { return '<div class="loading"><div class="spinner"></div><div class="loading-text">Loading...</div></div>'; }
+function errorBox(title, msg) { return `<div class="error-box"><div class="title">${title}</div><div class="msg">${msg}</div></div>`; }
+function emptyState(icon, msg) { return `<div class="empty-state"><div class="icon">${icon}</div><div>${msg}</div></div>`; }
+
+function navigate(path) { location.hash = path; }
+
+// ─── ROUTER ───
+function getRoute() {
+    const hash = (location.hash || '#/').slice(1);
+    const qIdx = hash.indexOf('?');
+    const path = qIdx >= 0 ? hash.slice(0, qIdx) : hash;
+    const segments = path.split('/').filter(Boolean);
+    return { path, segments, view: segments[0] || 'dashboard', param: segments.slice(1).join('/') };
+}
+
+async function route() {
+    const r = getRoute();
+    updateNav(r.view);
+    window.scrollTo(0, 0);
+    try {
+        switch (r.view) {
+            case 'dashboard': await renderDashboard(); break;
+            case 'blocks': await renderBlocks(); break;
+            case 'block': await renderBlockDetail(r.param); break;
+            case 'tx': await renderTxDetail(r.param); break;
+            case 'tokens': await renderTokens(); break;
+            case 'token': await renderTokenDetail(r.param); break;
+            case 'dmint': await renderDmint(); break;
+            case 'mempool': await renderMempool(); break;
+            case 'wave': await renderWave(); break;
+            case 'search': await renderSearch(decodeURIComponent(r.param)); break;
+            case 'settings': renderSettings(); break;
+            default: app.innerHTML = errorBox('Page Not Found', 'The requested page does not exist.');
+        }
+    } catch (e) {
+        console.error('Route error:', e);
+        app.innerHTML = errorBox('Error Loading Page', e.message + '<br><br><button class="btn btn-secondary btn-sm" onclick="showSettings()">Configure API</button>');
+    }
+}
+
+function updateNav(view) {
+    document.querySelectorAll('.nav-links a').forEach(a => {
+        a.classList.toggle('active', a.dataset.nav === view);
+    });
+}
+
+// ─── DASHBOARD ───
+async function renderDashboard() {
+    app.innerHTML = loading();
+    const results = await Promise.allSettled([
+        API.status(), API.recentBlocks(10), API.glyphStats(), API.v2Status(),
+        API.dmintStats(), fetchCoinGecko(), API.mempoolStats()
+    ]);
+    const [statusR, blocksR, glyphR, v2R, dmintR, cgR, mpR] = results.map(r => r.status === 'fulfilled' ? r.value : null);
+
+    const height = statusR?.sync_height || blocksR?.current_height || 0;
+    const latestBlock = blocksR?.blocks?.[0];
+    const latestHeader = latestBlock ? parseHeader(latestBlock.header_hex) : null;
+    const difficulty = latestHeader ? diffFromBits(latestHeader.bits) : null;
+    const hashrate = hashrateFromDiff(difficulty);
+    const halving = height ? getHalvingInfo(height) : null;
+    const md = cgR?.market_data;
+
+    // ── Market Data Hero ──
+    let marketHTML = '';
+    if (md) {
+        const p = md.current_price;
+        const ch = md.price_change_percentage_24h_in_currency;
+        marketHTML = `<div class="market-hero">
+            <div class="price-row">
+                <span class="price-main">${fmtUSD(p?.usd, 6)}</span>
+                <span class="price-btc">${p?.btc ? p.btc.toFixed(10) + ' BTC' : ''}</span>
+                ${pctBadge(md.price_change_percentage_24h)}
+            </div>
+            <div class="market-grid">
+                <div class="market-item"><div class="mi-label">Market Cap</div><div class="mi-value">${fmtCompact(md.market_cap?.usd)}</div><div class="mi-sub">Rank #${md.market_cap_rank || '—'}</div></div>
+                <div class="market-item"><div class="mi-label">24h Volume</div><div class="mi-value">${fmtCompact(md.total_volume?.usd)}</div></div>
+                <div class="market-item"><div class="mi-label">Circulating</div><div class="mi-value">${fmtSupplyNum(md.circulating_supply)}</div><div class="mi-sub">of ${fmtSupplyNum(md.max_supply)} max</div></div>
+                <div class="market-item"><div class="mi-label">1h</div><div class="mi-value">${pctBadge(ch?.usd != null ? md.price_change_percentage_1h_in_currency?.usd : null)}</div></div>
+                <div class="market-item"><div class="mi-label">7d</div><div class="mi-value">${pctBadge(md.price_change_percentage_7d)}</div></div>
+                <div class="market-item"><div class="mi-label">30d</div><div class="mi-value">${pctBadge(md.price_change_percentage_30d)}</div></div>
+                <div class="market-item"><div class="mi-label">ATH</div><div class="mi-value">${fmtUSD(md.ath?.usd, 6)}</div><div class="mi-sub">${md.ath_date?.usd ? new Date(md.ath_date.usd).toLocaleDateString() : ''} (${md.ath_change_percentage?.usd?.toFixed(1)}%)</div></div>
+                <div class="market-item"><div class="mi-label">FDV</div><div class="mi-value">${fmtCompact(md.fully_diluted_valuation?.usd)}</div></div>
+            </div>
+        </div>`;
+    }
+
+    // ── Network Summary ──
+    let netHTML = '<div class="section-title"><span class="sec-icon">&#x1f310;</span> Network Summary</div><div class="net-grid">';
+
+    // Mining panel
+    netHTML += '<div class="net-panel"><h4>Mining</h4>';
+    netHTML += `<div class="net-row"><span class="nr-label">Hashrate (est.)</span><span class="nr-value" style="color:var(--accent)">${hashrate ? fmtHashrate(hashrate) : '—'}</span></div>`;
+    netHTML += `<div class="net-row"><span class="nr-label">Difficulty</span><span class="nr-value">${difficulty ? difficulty.toLocaleString(undefined, {maximumFractionDigits: 2}) : '—'}</span></div>`;
+    netHTML += `<div class="net-row"><span class="nr-label">Block Reward</span><span class="nr-value" style="color:var(--green)">${halving ? fmtNum(halving.reward) + ' RXD' : '—'}</span></div>`;
+    netHTML += `<div class="net-row"><span class="nr-label">Algorithm</span><span class="nr-value">SHA-512/256</span></div>`;
+    netHTML += `<div class="net-row"><span class="nr-label">Target Block Time</span><span class="nr-value">5 minutes</span></div>`;
+    if (latestHeader) {
+        netHTML += `<div class="net-row"><span class="nr-label">Last Block</span><span class="nr-value">${timeAgo(latestHeader.timestamp)}</span></div>`;
+    }
+    netHTML += '</div>';
+
+    // Blockchain panel
+    netHTML += '<div class="net-panel"><h4>Blockchain</h4>';
+    netHTML += `<div class="net-row"><span class="nr-label">Block Height</span><span class="nr-value" style="color:var(--accent)">${fmtNum(height)}</span></div>`;
+    const v2Active = v2R?.activated;
+    netHTML += `<div class="net-row"><span class="nr-label">V2 Hard Fork</span><span class="nr-value">${v2Active ? '<span class="badge badge-success">Active</span>' : v2R ? `<span class="badge badge-pending">${fmtNum(v2R.blocks_remaining)} blocks</span>` : '—'}</span></div>`;
+    if (v2R) netHTML += `<div class="net-row"><span class="nr-label">Fork Height</span><span class="nr-value">${fmtNum(v2R.activation_height)}</span></div>`;
+    netHTML += `<div class="net-row"><span class="nr-label">Glyph Tokens</span><span class="nr-value">${fmtNum(glyphR?.total_tokens || glyphR?.total)}</span></div>`;
+    const dmintCount = glyphR?.by_type?.dMint ?? glyphR?.by_type?.['4'] ?? glyphR?.by_type?.dmint ?? dmintR?.total_contracts ?? 0;
+    netHTML += `<div class="net-row"><span class="nr-label">dMint Tokens</span><span class="nr-value">${fmtNum(dmintCount)}</span></div>`;
+    netHTML += `<div class="net-row"><span class="nr-label">API Status</span><span class="nr-value">${statusR ? '<span style="color:var(--green)">Connected</span>' : '<span style="color:var(--red)">Offline</span>'}</span></div>`;
+    netHTML += '</div>';
+
+    // Financials panel
+    netHTML += '<div class="net-panel"><h4>Financials</h4>';
+    if (md) {
+        netHTML += `<div class="net-row"><span class="nr-label">Price (USD)</span><span class="nr-value" style="color:var(--green)">${fmtUSD(md.current_price?.usd, 6)}</span></div>`;
+        netHTML += `<div class="net-row"><span class="nr-label">Price (BTC)</span><span class="nr-value">${md.current_price?.btc?.toFixed(10) || '—'} BTC</span></div>`;
+        netHTML += `<div class="net-row"><span class="nr-label">Market Cap</span><span class="nr-value">${fmtCompact(md.market_cap?.usd)}</span></div>`;
+        netHTML += `<div class="net-row"><span class="nr-label">24h Volume</span><span class="nr-value">${fmtCompact(md.total_volume?.usd)}</span></div>`;
+        netHTML += `<div class="net-row"><span class="nr-label">Circulating</span><span class="nr-value">${fmtSupplyNum(md.circulating_supply)}</span></div>`;
+        netHTML += `<div class="net-row"><span class="nr-label">Max Supply</span><span class="nr-value">${fmtSupplyNum(md.max_supply)}</span></div>`;
+    } else {
+        netHTML += `<div class="net-row"><span class="nr-label" style="color:var(--text-muted)">Market data unavailable</span></div>`;
+    }
+    netHTML += '</div>';
+    netHTML += '</div>';
+
+    // ── Halving Info ──
+    let halvingHTML = '';
+    if (halving) {
+        const pct = ((height % 210000) / 210000 * 100).toFixed(1);
+        halvingHTML = `<div class="section-title"><span class="sec-icon">&#x23F3;</span> Halving Schedule</div>
+        <div class="stats-row">
+            ${statCard('Current Era', halving.era + ' of 64', 'accent')}
+            ${statCard('Block Reward', fmtNum(halving.reward) + ' RXD', 'green')}
+            ${statCard('Next Halving', 'Block ' + fmtNum(halving.nextHalving), 'purple')}
+            ${statCard('Blocks Until Halving', fmtNum(halving.blocksRemaining), 'orange', 'Est. ' + halving.estDate.toLocaleDateString())}
+            ${statCard('Era Progress', pct + '%', 'accent')}
+        </div>`;
+    }
+
+    // ── Exchange Tickers ──
+    let tickerHTML = '';
+    if (cgR?.tickers?.length) {
+        tickerHTML = '<div class="section-title"><span class="sec-icon">&#x1f4b1;</span> Exchange Tickers</div><div class="ticker-grid">';
+        for (const tk of cgR.tickers) {
+            const tradeUrl = tk.trade_url || '#';
+            const vol = tk.converted_volume?.usd;
+            tickerHTML += `<a href="${tradeUrl}" target="_blank" rel="noopener noreferrer" class="ticker-card" style="text-decoration:none;color:inherit">
+                <div><div class="tc-pair">${tk.base}/${tk.target}</div><div class="tc-exchange">${tk.market?.name || '—'}</div></div>
+                <div style="text-align:right"><div class="tc-price">${fmtUSD(tk.converted_last?.usd, 6)}</div>${vol ? `<div class="tc-vol">Vol: ${fmtCompact(vol)}</div>` : ''}</div>
+            </a>`;
+        }
+        tickerHTML += '</div>';
+    }
+
+    // ── Mempool Preview ──
+    const mpInfoR = await API.mempoolInfo().catch(() => null);
+    let mpHTML = '';
+    if (mpInfoR || (mpR && mpR.enabled)) {
+        mpHTML = `<div class="section-title"><span class="sec-icon">&#x1f4e8;</span> Mempool <a href="#/mempool" class="btn btn-secondary btn-sm" style="margin-left:auto">Details</a></div>
+        <div class="stats-row">
+            ${mpInfoR ? statCard('Unconfirmed Txs', fmtNum(mpInfoR.size), 'orange') : ''}
+            ${mpInfoR ? statCard('Mempool Size', (mpInfoR.bytes / 1024).toFixed(1) + ' KB', 'accent') : ''}
+            ${mpInfoR ? statCard('Min Fee', mpInfoR.mempoolminfee + ' RXD/KB', 'purple') : ''}
+            ${mpR?.enabled ? statCard('Glyph Txs', fmtNum(mpR.glyph_txs ?? 0), 'green') : ''}
+        </div>`;
+    }
+
+    // ── Recent Blocks ──
+    let blocksHTML = '';
+    if (blocksR?.blocks?.length) {
+        blocksHTML = '<div class="section-title"><span class="sec-icon">&#x26D3;</span> Recent Blocks</div>';
+        blocksHTML += '<div class="table-wrap"><div class="table-header"><h3>Latest Blocks</h3><a href="#/blocks" class="btn btn-secondary btn-sm">View All</a></div><table><thead><tr><th>Height</th><th>Time</th><th>Difficulty</th><th>Nonce</th></tr></thead><tbody>';
+        for (const b of blocksR.blocks) {
+            const h = parseHeader(b.header_hex);
+            const bDiff = h ? diffFromBits(h.bits) : null;
+            blocksHTML += `<tr style="cursor:pointer" onclick="navigate('/block/${b.height}')">
+                <td><a href="#/block/${b.height}">${fmtNum(b.height)}</a></td>
+                <td>${h ? timeAgo(h.timestamp) : '—'}</td>
+                <td>${bDiff ? bDiff.toLocaleString(undefined, {maximumFractionDigits:2}) : '—'}</td>
+                <td>${h ? fmtNum(h.nonce) : '—'}</td>
+            </tr>`;
+        }
+        blocksHTML += '</tbody></table></div>';
+    }
+
+    // ── Token Statistics ──
+    let tokenStatsHTML = '';
+    if (glyphR) {
+        tokenStatsHTML = '<div class="section-title"><span class="sec-icon">&#x1f4e6;</span> Token Statistics</div>';
+        tokenStatsHTML += '<div class="table-wrap"><div class="table-header"><h3>Glyph Token Overview</h3><a href="#/tokens" class="btn btn-secondary btn-sm">Browse Tokens</a></div>';
+        tokenStatsHTML += '<div style="padding:20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;">';
+        if (glyphR.total_tokens != null) tokenStatsHTML += `<div style="text-align:center"><div style="font-size:1.3rem;font-weight:700;color:var(--accent)">${fmtNum(glyphR.total_tokens)}</div><div style="font-size:0.78rem;color:var(--text-muted);text-transform:uppercase">Total</div></div>`;
+        const byType = glyphR.by_type || {};
+        for (const [k, v] of Object.entries(byType)) {
+            tokenStatsHTML += `<div style="text-align:center"><div style="font-size:1.3rem;font-weight:700;color:var(--accent)">${fmtNum(v)}</div><div style="font-size:0.78rem;color:var(--text-muted);text-transform:uppercase">${k}</div></div>`;
+        }
+        if (glyphR.by_version) {
+            for (const [k, v] of Object.entries(glyphR.by_version)) {
+                tokenStatsHTML += `<div style="text-align:center"><div style="font-size:1.3rem;font-weight:700;color:var(--purple)">${fmtNum(v)}</div><div style="font-size:0.78rem;color:var(--text-muted);text-transform:uppercase">${k}</div></div>`;
+            }
+        }
+        tokenStatsHTML += '</div></div>';
+    }
+
+    // ── Config Banner ──
+    let configHTML = '';
+    if (!statusR) {
+        configHTML = `<div class="config-banner">
+            <h3>&#x26a0;&#xfe0f; API Connection Required</h3>
+            <p>Configure your RXinDexer REST API endpoint to enable live blockchain data. The API must have CORS enabled for this domain.</p>
+            <div class="config-row">
+                <input type="text" id="cfgApiUrl" value="${API_BASE}" placeholder="https://your-rxindexer:8000">
+                <button class="btn btn-primary" onclick="saveConfig()">Connect</button>
+            </div>
+        </div>`;
+    }
+
+    app.innerHTML = `<h1 class="page-title">Radiant Explorer</h1>${configHTML}${marketHTML}${netHTML}${halvingHTML}${mpHTML}${blocksHTML}${tokenStatsHTML}${tickerHTML}`;
+}
+
+function statCard(label, value, color = 'accent', note = '') {
+    return `<div class="stat-card"><div class="label">${label}</div><div class="value ${color}">${value}</div>${note ? `<div class="note">${note}</div>` : ''}</div>`;
+}
+
+// ─── BLOCKS ───
+async function renderBlocks() {
+    app.innerHTML = loading();
+    const data = await API.recentBlocks(50);
+    let rows = '';
+    for (const b of (data.blocks || [])) {
+        const h = parseHeader(b.header_hex);
+        const bDiff = h ? diffFromBits(h.bits) : null;
+        const reward = getBlockReward(b.height);
+        rows += `<tr style="cursor:pointer" onclick="navigate('/block/${b.height}')">
+            <td><a href="#/block/${b.height}">${fmtNum(b.height)}</a></td>
+            <td>${h ? timeAgo(h.timestamp) : '—'}</td>
+            <td>${bDiff ? bDiff.toLocaleString(undefined,{maximumFractionDigits:2}) : '—'}</td>
+            <td class="right">${fmtNum(reward)} RXD</td>
+            <td class="right">${h ? fmtNum(h.nonce) : '—'}</td>
+        </tr>`;
+    }
+    app.innerHTML = `
+        <h1 class="page-title">Blocks <span class="subtitle">Height: ${fmtNum(data.current_height)}</span></h1>
+        <div class="table-wrap"><table>
+            <thead><tr><th>Height</th><th>Age</th><th>Difficulty</th><th class="right">Reward</th><th class="right">Nonce</th></tr></thead>
+            <tbody>${rows || '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:40px">No blocks found</td></tr>'}</tbody>
+        </table></div>`;
+}
+
+// ─── BLOCK DETAIL ───
+async function renderBlockDetail(height) {
+    app.innerHTML = loading();
+    const data = await API.block(parseInt(height));
+    const h = parseHeader(data.header_hex);
+    if (!h) { app.innerHTML = errorBox('Parse Error', 'Could not parse block header.'); return; }
+    const prevLink = data.height > 0 ? `<a href="#/block/${data.height - 1}">${truncHash(h.prevHash, 16)}</a>` : truncHash(h.prevHash, 16);
+    const bDiff = diffFromBits(h.bits);
+    const bHashrate = hashrateFromDiff(bDiff);
+    const bReward = getBlockReward(data.height);
+
+    app.innerHTML = `
+        <div class="breadcrumb"><a href="#/">Home</a> / <a href="#/blocks">Blocks</a> / Block #${fmtNum(data.height)}</div>
+        <h1 class="page-title">Block #${fmtNum(data.height)}</h1>
+        <div class="stats-row">
+            ${statCard('Difficulty', bDiff ? bDiff.toLocaleString(undefined,{maximumFractionDigits:2}) : '—', 'accent')}
+            ${statCard('Hashrate (est.)', bHashrate ? fmtHashrate(bHashrate) : '—', 'purple')}
+            ${statCard('Block Reward', fmtNum(bReward) + ' RXD', 'green')}
+        </div>
+        <div class="detail-panel">
+            <div class="detail-row"><div class="detail-label">Height</div><div class="detail-value">${fmtNum(data.height)}</div></div>
+            <div class="detail-row"><div class="detail-label">Timestamp</div><div class="detail-value">${fmtDate(h.timestamp)} (${timeAgo(h.timestamp)})</div></div>
+            <div class="detail-row"><div class="detail-label">Version</div><div class="detail-value mono">0x${h.version.toString(16).padStart(8, '0')}</div></div>
+            <div class="detail-row"><div class="detail-label">Previous Block</div><div class="detail-value"><span class="mono">${prevLink}</span> ${copyBtn(h.prevHash)}</div></div>
+            <div class="detail-row"><div class="detail-label">Merkle Root</div><div class="detail-value"><span class="mono">${truncHash(h.merkleRoot, 20)}</span> ${copyBtn(h.merkleRoot)}</div></div>
+            <div class="detail-row"><div class="detail-label">Difficulty</div><div class="detail-value">${bDiff ? bDiff.toLocaleString(undefined,{maximumFractionDigits:4}) : '—'}</div></div>
+            <div class="detail-row"><div class="detail-label">Bits</div><div class="detail-value mono">0x${h.bits}</div></div>
+            <div class="detail-row"><div class="detail-label">Nonce</div><div class="detail-value">${fmtNum(h.nonce)}</div></div>
+            <div class="detail-row"><div class="detail-label">Raw Header</div><div class="detail-value"><span class="mono" style="font-size:0.72rem;word-break:break-all">${data.header_hex}</span> ${copyBtn(data.header_hex)}</div></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:16px">
+            ${data.height > 0 ? `<a href="#/block/${data.height - 1}" class="btn btn-secondary btn-sm">&larr; Block ${fmtNum(data.height - 1)}</a>` : ''}
+            <a href="#/block/${data.height + 1}" class="btn btn-secondary btn-sm">Block ${fmtNum(data.height + 1)} &rarr;</a>
+        </div>`;
+}
+
+// ─── TRANSACTION DETAIL ───
+async function renderTxDetail(txid) {
+    app.innerHTML = loading();
+    const tx = await API.tx(txid);
+    const inputs = tx.vin || [];
+    const outputs = tx.vout || [];
+
+    let inputsHTML = '';
+    for (let i = 0; i < inputs.length; i++) {
+        const vin = inputs[i];
+        if (vin.coinbase) {
+            inputsHTML += `<div class="io-item"><div class="io-idx">#${i}</div><div class="io-val" style="color:var(--orange)">Coinbase</div><div class="io-script">${truncHash(vin.coinbase, 20)}</div></div>`;
+        } else {
+            inputsHTML += `<div class="io-item"><div class="io-idx">#${i}</div><div class="io-hash"><a href="#/tx/${vin.txid}">${truncHash(vin.txid, 12)}</a>:${vin.vout}</div></div>`;
+        }
+    }
+
+    let outputsHTML = '';
+    let totalOut = 0;
+    for (let i = 0; i < outputs.length; i++) {
+        const vout = outputs[i];
+        const val = vout.value || 0;
+        totalOut += val;
+        const addr = vout.scriptPubKey?.addresses?.[0] || vout.scriptPubKey?.address || '';
+        const type = vout.scriptPubKey?.type || '';
+        outputsHTML += `<div class="io-item">
+            <div class="io-idx">#${i}</div>
+            ${addr ? `<div class="io-hash">${truncHash(addr, 12)}</div>` : `<div style="color:var(--text-muted);font-size:0.78rem">${type}</div>`}
+            <div class="io-val">${fmtRXD(val * 1e8)}</div>
+        </div>`;
+    }
+
+    app.innerHTML = `
+        <div class="breadcrumb"><a href="#/">Home</a> / Transaction</div>
+        <h1 class="page-title">Transaction</h1>
+        <div class="detail-panel">
+            <div class="detail-row"><div class="detail-label">TxID</div><div class="detail-value"><span class="mono">${truncHash(txid, 24)}</span> ${copyBtn(txid)}</div></div>
+            ${tx.blockhash ? `<div class="detail-row"><div class="detail-label">Block Hash</div><div class="detail-value"><span class="mono">${truncHash(tx.blockhash, 16)}</span></div></div>` : ''}
+            ${tx.confirmations != null ? `<div class="detail-row"><div class="detail-label">Confirmations</div><div class="detail-value"><span class="badge badge-success">${fmtNum(tx.confirmations)}</span></div></div>` : ''}
+            ${tx.time ? `<div class="detail-row"><div class="detail-label">Time</div><div class="detail-value">${fmtDate(tx.time)} (${timeAgo(tx.time)})</div></div>` : ''}
+            <div class="detail-row"><div class="detail-label">Version</div><div class="detail-value">${tx.version || '—'}</div></div>
+            <div class="detail-row"><div class="detail-label">Size</div><div class="detail-value">${tx.size ? fmtNum(tx.size) + ' bytes' : '—'}</div></div>
+            <div class="detail-row"><div class="detail-label">Locktime</div><div class="detail-value">${fmtNum(tx.locktime)}</div></div>
+            <div class="detail-row"><div class="detail-label">Total Output</div><div class="detail-value" style="color:var(--green);font-weight:600">${fmtRXD(totalOut * 1e8)}</div></div>
+        </div>
+        <div class="io-grid">
+            <div class="io-box"><div class="io-title">Inputs (${inputs.length})</div>${inputsHTML || '<div class="io-item" style="color:var(--text-muted)">No inputs</div>'}</div>
+            <div class="io-arrow">&#x27A1;</div>
+            <div class="io-box"><div class="io-title">Outputs (${outputs.length})</div>${outputsHTML || '<div class="io-item" style="color:var(--text-muted)">No outputs</div>'}</div>
+        </div>`;
+}
+
+// ─── TOKENS ───
+let tokenPage = { offset: 0, limit: 50, type: null };
+async function renderTokens(typeFilter = null) {
+    if (typeFilter !== undefined) tokenPage.type = typeFilter;
+    app.innerHTML = loading();
+
+    const [glyphData, statsData] = await Promise.all([
+        tokenPage.type !== null
+            ? API.glyphsByType(tokenPage.type, tokenPage.limit, tokenPage.offset)
+            : API.glyphs(tokenPage.limit, tokenPage.offset),
+        API.glyphStats().catch(() => null)
+    ]);
+
+    const tokens = glyphData.tokens || glyphData.results || glyphData || [];
+    const total = glyphData.total || glyphData.count || tokens.length;
+
+    const tabs = `<div class="tabs">
+        <button class="tab ${tokenPage.type === null ? 'active' : ''}" onclick="tokenPage.offset=0;renderTokens(null)">All</button>
+        <button class="tab ${tokenPage.type === 1 ? 'active' : ''}" onclick="tokenPage.offset=0;renderTokens(1)">Fungible</button>
+        <button class="tab ${tokenPage.type === 2 ? 'active' : ''}" onclick="tokenPage.offset=0;renderTokens(2)">NFT</button>
+        <button class="tab ${tokenPage.type === 4 ? 'active' : ''}" onclick="tokenPage.offset=0;renderTokens(4)">dMint</button>
+        <button class="tab ${tokenPage.type === 3 ? 'active' : ''}" onclick="tokenPage.offset=0;renderTokens(3)">Data</button>
+    </div>`;
+
+    let gridHTML = '<div class="token-grid">';
+    for (const t of (Array.isArray(tokens) ? tokens : [])) {
+        const rawRef = t.ref || t.glyph_id || '';
+        const navRef = refTo72Hex(rawRef);
+        const displayRef = refToDisplay(rawRef);
+        const name = t.name || 'Unnamed Token';
+        const ticker = t.ticker || '';
+        const typeId = resolveTypeId(t);
+        gridHTML += `<div class="token-card" onclick="navigate('/token/${navRef}')">
+            <div class="top"><span class="name">${escHTML(name)}</span>${typeBadge(typeId)}</div>
+            ${ticker ? `<span class="ticker">${escHTML(ticker)}</span>` : ''}
+            <div class="ref" title="${rawRef}">${displayRef || rawRef}</div>
+            <div class="meta">
+                ${t.total_supply != null ? `<span>Supply: ${fmtNum(t.total_supply)}</span>` : ''}
+                ${t.decimals != null ? `<span>Dec: ${t.decimals}</span>` : ''}
+            </div>
+        </div>`;
+    }
+    gridHTML += '</div>';
+
+    if (!tokens.length) gridHTML = emptyState('&#x1f4e6;', 'No tokens found for this filter.');
+
+    const pageHTML = tokens.length >= tokenPage.limit || tokenPage.offset > 0 ? `
+        <div class="pagination">
+            <button class="page-btn" onclick="tokenPage.offset=Math.max(0,tokenPage.offset-tokenPage.limit);renderTokens()" ${tokenPage.offset <= 0 ? 'disabled' : ''}>&#x2190; Prev</button>
+            <span class="page-info">Showing ${tokenPage.offset + 1}&ndash;${tokenPage.offset + tokens.length}</span>
+            <button class="page-btn" onclick="tokenPage.offset+=tokenPage.limit;renderTokens()" ${tokens.length < tokenPage.limit ? 'disabled' : ''}>Next &#x2192;</button>
+        </div>` : '';
+
+    app.innerHTML = `<h1 class="page-title">Glyph Tokens <span class="subtitle">${fmtNum(total)} indexed</span></h1>${tabs}${gridHTML}${pageHTML}`;
+}
+
+function escHTML(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+// ─── TOKEN DETAIL ───
+async function renderTokenDetail(ref) {
+    app.innerHTML = loading();
+    const [token, supply, holders, history, metadata] = await Promise.allSettled([
+        API.glyph(ref), API.tokenSupply(ref), API.tokenHolders(ref), API.tokenHistory(ref), API.tokenMetadata(ref)
+    ]);
+    const t = token.status === 'fulfilled' ? token.value : null;
+    const sup = supply.status === 'fulfilled' ? supply.value : null;
+    const hold = holders.status === 'fulfilled' ? holders.value : null;
+    const hist = history.status === 'fulfilled' ? history.value : null;
+    const meta = metadata.status === 'fulfilled' ? metadata.value : null;
+
+    if (!t || t.detail) { app.innerHTML = errorBox('Token Not Found', `No token found for ref: ${ref}`); return; }
+
+    const name = t.name || 'Unnamed Token';
+    const ticker = t.ticker || '';
+    const typeId = resolveTypeId(t);
+    const protocols = t.protocols || [];
+    const displayRef = refToDisplay(ref);
+
+    let infoHTML = `<div class="detail-panel">
+        <div class="detail-row"><div class="detail-label">Name</div><div class="detail-value" style="font-weight:600;font-size:1.1rem">${escHTML(name)} ${ticker ? `(${escHTML(ticker)})` : ''}</div></div>
+        <div class="detail-row"><div class="detail-label">Type</div><div class="detail-value">${typeBadge(typeId)}</div></div>
+        <div class="detail-row"><div class="detail-label">Reference</div><div class="detail-value"><span class="mono" style="font-size:0.78rem">${displayRef || ref}</span> ${copyBtn(ref)}</div></div>
+        ${protocols.length ? `<div class="detail-row"><div class="detail-label">Protocols</div><div class="detail-value">${protocols.map(p => `<span class="badge badge-dmint" style="margin-right:4px">${p}</span>`).join('')}</div></div>` : ''}
+        ${t.type_name ? `<div class="detail-row"><div class="detail-label">Type Name</div><div class="detail-value">${escHTML(t.type_name)}</div></div>` : ''}
+        ${t.decimals != null ? `<div class="detail-row"><div class="detail-label">Decimals</div><div class="detail-value">${t.decimals}</div></div>` : ''}
+        ${t.deploy_height != null ? `<div class="detail-row"><div class="detail-label">Deploy Height</div><div class="detail-value"><a href="#/block/${t.deploy_height}">${fmtNum(t.deploy_height)}</a></div></div>` : ''}
+        ${t.deploy_txid ? `<div class="detail-row"><div class="detail-label">Deploy TxID</div><div class="detail-value"><a href="#/tx/${t.deploy_txid}" class="mono" style="font-size:0.78rem">${truncHash(t.deploy_txid, 16)}</a> ${copyBtn(t.deploy_txid)}</div></div>` : ''}
+        ${t.description ? `<div class="detail-row"><div class="detail-label">Description</div><div class="detail-value">${escHTML(t.description)}</div></div>` : ''}
+        ${t.author ? `<div class="detail-row"><div class="detail-label">Author</div><div class="detail-value">${escHTML(t.author)}</div></div>` : ''}
+    </div>`;
+
+    let supplyHTML = '';
+    const sd = sup && !sup.detail ? sup : t;
+    const isDmint = t.dmint || (sd.is_dmint === true);
+    if (sd.total_supply != null || sd.current_supply != null) {
+        supplyHTML = '<div class="section-title"><span class="sec-icon">&#x1f4ca;</span> Supply</div><div class="stats-row">';
+        if (sd.total_supply != null) {
+            const tsLabel = (isDmint && sd.total_supply === 0) ? 'Uncapped' : fmtBigNum(sd.total_supply);
+            supplyHTML += statCard('Total Supply', tsLabel);
+        }
+        if (sd.current_supply) supplyHTML += statCard('Current Supply', fmtBigNum(sd.current_supply), 'green');
+        const circ = sd.circulating_supply || sd.current_supply || 0;
+        if (circ > 0) supplyHTML += statCard('Circulating', fmtBigNum(circ), 'green');
+        if (sd.mined_supply) supplyHTML += statCard('Mined', fmtBigNum(sd.mined_supply), 'purple');
+        if (sd.premine != null && sd.premine > 0) supplyHTML += statCard('Premine', fmtBigNum(sd.premine), 'orange');
+        const burned = sd.burned_count ?? sd.burned;
+        if (burned != null && burned > 0) supplyHTML += statCard('Burned', fmtNum(burned), 'orange');
+        if (sd.holder_count > 0) supplyHTML += statCard('Holders', fmtNum(sd.holder_count), 'accent');
+        if (sd.percent_mined != null && sd.percent_mined > 0) supplyHTML += statCard('Mined %', sd.percent_mined.toFixed(1) + '%', 'accent');
+        supplyHTML += '</div>';
+    }
+
+    let dmintHTML = '';
+    if (t.dmint) {
+        const dm = t.dmint;
+        const algoNames = { 0: 'SHA256D', 1: 'BLAKE3', 2: 'K12', 3: 'Argon2id', 4: 'RandomX' };
+        dmintHTML = '<div class="section-title"><span class="sec-icon">&#x26CF;</span> dMint Contract Info</div>';
+        dmintHTML += '<div class="stats-row">';
+        dmintHTML += statCard('Algorithm', dm.algorithm_name || algoNames[dm.algorithm] || 'Unknown', 'accent');
+        dmintHTML += statCard('Mint Count', fmtNum(dm.mint_count), 'green');
+        if (t.mined_supply) dmintHTML += statCard('Mined Supply', fmtBigNum(t.mined_supply), 'purple');
+        dmintHTML += statCard('Reward / Mint', fmtBigNum(dm.reward), 'orange');
+        dmintHTML += statCard('DAA Mode', dm.daa_mode_name || 'Mode ' + (dm.daa_mode ?? '—'), 'accent');
+        dmintHTML += '</div>';
+        dmintHTML += '<div class="detail-panel">';
+        if (dm.contract_ref) dmintHTML += `<div class="detail-row"><div class="detail-label">Contract Ref</div><div class="detail-value"><span class="mono" style="font-size:0.78rem">${dm.contract_ref}</span> ${copyBtn(dm.contract_ref)}</div></div>`;
+        dmintHTML += `<div class="detail-row"><div class="detail-label">Algorithm ID</div><div class="detail-value">${dm.algorithm} — ${dm.algorithm_name || algoNames[dm.algorithm] || 'Unknown'}</div></div>`;
+        dmintHTML += `<div class="detail-row"><div class="detail-label">Start Difficulty</div><div class="detail-value">${fmtBigNum(dm.start_difficulty)}</div></div>`;
+        dmintHTML += `<div class="detail-row"><div class="detail-label">Current Difficulty</div><div class="detail-value">${fmtBigNum(dm.current_difficulty)}</div></div>`;
+        dmintHTML += `<div class="detail-row"><div class="detail-label">Reward per Mint</div><div class="detail-value">${fmtBigNum(dm.reward)}</div></div>`;
+        if (dm.premine > 0) dmintHTML += `<div class="detail-row"><div class="detail-label">Premine</div><div class="detail-value">${fmtBigNum(dm.premine)}</div></div>`;
+        if (dm.halving_interval) dmintHTML += `<div class="detail-row"><div class="detail-label">Halving Interval</div><div class="detail-value">${fmtNum(dm.halving_interval)} mints</div></div>`;
+        dmintHTML += `<div class="detail-row"><div class="detail-label">DAA Mode</div><div class="detail-value">${dm.daa_mode_name || 'Mode ' + (dm.daa_mode ?? '—')}</div></div>`;
+        dmintHTML += `<div class="detail-row"><div class="detail-label">Total Mints</div><div class="detail-value">${fmtNum(dm.mint_count)}</div></div>`;
+        dmintHTML += '</div>';
+    }
+
+    let attrsHTML = '';
+    if (t.attrs && Object.keys(t.attrs).length) {
+        attrsHTML = '<div class="table-wrap"><div class="table-header"><h3>Custom Attributes</h3></div><table><thead><tr><th>Attribute</th><th>Value</th></tr></thead><tbody>';
+        for (const [k, v] of Object.entries(t.attrs)) {
+            attrsHTML += `<tr><td style="font-weight:500">${escHTML(k)}</td><td>${escHTML(String(v))}</td></tr>`;
+        }
+        attrsHTML += '</tbody></table></div>';
+    }
+
+    let holdersHTML = '';
+    const holderList = hold?.holders || (Array.isArray(hold) ? hold : []);
+    if (holderList.length) {
+        holdersHTML = '<div class="table-wrap"><div class="table-header"><h3>Top Holders</h3></div><table><thead><tr><th>#</th><th>Address / Scripthash</th><th class="right">Balance</th></tr></thead><tbody>';
+        holderList.slice(0, 25).forEach((h, i) => {
+            holdersHTML += `<tr><td>${i + 1}</td><td class="hash-cell">${truncHash(h.scripthash || h.address || '—', 14)}</td><td class="right">${fmtNum(h.balance || h.amount)}</td></tr>`;
+        });
+        holdersHTML += '</tbody></table></div>';
+    }
+
+    let historyHTML = '';
+    const histList = hist?.events || hist?.history || (Array.isArray(hist) ? hist : []);
+    if (histList.length) {
+        historyHTML = '<div class="table-wrap"><div class="table-header"><h3>History</h3></div><table><thead><tr><th>Event</th><th>TxID</th><th>Block</th><th class="right">Tx Index</th></tr></thead><tbody>';
+        histList.slice(0, 50).forEach(ev => {
+            const evType = ev.event || ev.type || '—';
+            const evBadge = evType === 'deploy' ? 'success' : evType === 'mint' ? 'active' : evType === 'burn' ? 'authority' : evType === 'transfer' ? 'dmint' : 'pending';
+            historyHTML += `<tr>
+                <td><span class="badge badge-${evBadge}">${evType}</span></td>
+                <td class="hash-cell"><a href="#/tx/${ev.txid || ev.tx_hash}">${truncHash(ev.txid || ev.tx_hash, 10)}</a></td>
+                <td>${ev.height != null ? `<a href="#/block/${ev.height}">${fmtNum(ev.height)}</a>` : '—'}</td>
+                <td class="right">${ev.tx_idx != null ? ev.tx_idx : (ev.amount != null ? fmtNum(ev.amount) : '—')}</td>
+            </tr>`;
+        });
+        historyHTML += '</tbody></table></div>';
+    }
+
+    let metaHTML = '';
+    if (meta?.metadata) {
+        metaHTML = `<div class="table-wrap"><div class="table-header"><h3>Metadata (CBOR)</h3></div><div style="padding:16px"><pre style="font-size:0.82rem;color:var(--text-muted);white-space:pre-wrap;word-break:break-all">${escHTML(JSON.stringify(meta.metadata, null, 2))}</pre></div></div>`;
+    }
+
+    app.innerHTML = `
+        <div class="breadcrumb"><a href="#/">Home</a> / <a href="#/tokens">Tokens</a> / ${escHTML(name)}</div>
+        <h1 class="page-title">${escHTML(name)} ${ticker ? `<span class="subtitle">${escHTML(ticker)}</span>` : ''}</h1>
+        ${infoHTML}${supplyHTML}${dmintHTML}${attrsHTML}${holdersHTML}${historyHTML}${metaHTML}`;
+}
+
+// ─── DMINT ───
+async function renderDmint() {
+    app.innerHTML = loading();
+    const [tokensR, algosR] = await Promise.allSettled([
+        API.glyphsByType(4, 500, 0),
+        API.dmintAlgorithms()
+    ]);
+    const tokensData = tokensR.status === 'fulfilled' ? tokensR.value : null;
+    const algos = algosR.status === 'fulfilled' ? algosR.value : null;
+
+    const tokens = tokensData?.tokens || tokensData?.results || (Array.isArray(tokensData) ? tokensData : []);
+    const total = tokensData?.count || tokens.length;
+
+    const algoNames = { 0: 'SHA256D', 1: 'BLAKE3', 2: 'K12', 3: 'Argon2id', 4: 'RandomX' };
+
+    // Sort by mint_count descending (most active first)
+    tokens.sort((a, b) => (b.dmint?.mint_count || 0) - (a.dmint?.mint_count || 0));
+
+    let statsHTML = '<div class="stats-row">';
+    statsHTML += statCard('dMint Tokens', fmtNum(total), 'accent');
+    const byAlgo = {};
+    let totalMints = 0;
+    for (const t of tokens) {
+        const algoId = t.dmint?.algorithm ?? 0;
+        const algoName = t.dmint?.algorithm_name || algoNames[algoId] || `Algo ${algoId}`;
+        byAlgo[algoName] = (byAlgo[algoName] || 0) + 1;
+        totalMints += t.dmint?.mint_count || 0;
+    }
+    statsHTML += statCard('Total Mints', fmtNum(totalMints), 'green');
+    for (const [name, count] of Object.entries(byAlgo)) {
+        statsHTML += statCard(name, fmtNum(count), 'orange');
+    }
+    statsHTML += '</div>';
+
+    let tableHTML = '';
+    if (tokens.length) {
+        tableHTML = '<div class="table-wrap"><div class="table-header"><h3>dMint Tokens</h3></div><table id="dmint-table"><thead><tr>'
+            + '<th class="sortable" data-col="0" data-type="str">Name</th>'
+            + '<th class="sortable" data-col="1" data-type="str">Ticker</th>'
+            + '<th class="sortable" data-col="2" data-type="str">Algorithm</th>'
+            + '<th class="sortable right" data-col="3" data-type="num">Reward</th>'
+            + '<th class="sortable right" data-col="4" data-type="num">Mints</th>'
+            + '<th class="sortable right" data-col="5" data-type="num">Mined Supply</th>'
+            + '<th class="sortable right" data-col="6" data-type="num">Total Supply</th>'
+            + '<th class="sortable right" data-col="7" data-type="num">Mined %</th>'
+            + '<th class="sortable right" data-col="8" data-type="num">Height</th>'
+            + '</tr></thead><tbody>';
+        for (const t of tokens) {
+            const dm = t.dmint || {};
+            const rawRef = t.ref || t.glyph_id || '';
+            const navRef = refTo72Hex(rawRef);
+            const pctVal = t.percent_mined != null && t.percent_mined > 0 ? t.percent_mined : 0;
+            tableHTML += `<tr style="cursor:pointer" onclick="navigate('/token/${navRef}')">
+                <td style="font-weight:500" data-sort="${escHTML(t.name || '')}">${escHTML(t.name || 'Unnamed')}</td>
+                <td data-sort="${t.ticker ? escHTML(t.ticker) : ''}">${t.ticker ? escHTML(t.ticker) : '—'}</td>
+                <td data-sort="${dm.algorithm_name || algoNames[dm.algorithm] || ''}"><span class="badge badge-dmint">${dm.algorithm_name || algoNames[dm.algorithm] || '—'}</span></td>
+                <td class="right" data-sort="${dm.reward || 0}">${dm.reward != null ? fmtBigNum(dm.reward) : '—'}</td>
+                <td class="right" data-sort="${dm.mint_count || 0}">${dm.mint_count != null ? fmtNum(dm.mint_count) : '—'}</td>
+                <td class="right" data-sort="${t.mined_supply || 0}">${t.mined_supply ? fmtBigNum(t.mined_supply) : '—'}</td>
+                <td class="right" data-sort="${t.total_supply || 0}">${t.total_supply ? fmtBigNum(t.total_supply) : '—'}</td>
+                <td class="right" data-sort="${pctVal}">${pctVal > 0 ? pctVal.toFixed(1) + '%' : '—'}</td>
+                <td class="right" data-sort="${t.deploy_height || 0}">${t.deploy_height ? `<a href="#/block/${t.deploy_height}">${fmtNum(t.deploy_height)}</a>` : '—'}</td>
+            </tr>`;
+        }
+        tableHTML += '</tbody></table></div>';
+    } else {
+        tableHTML = emptyState('&#x26CF;', 'No dMint tokens found.');
+    }
+
+    let algoHTML = '';
+    if (algos?.algorithms) {
+        algoHTML = '<div class="table-wrap"><div class="table-header"><h3>Supported Algorithms</h3></div><table><thead><tr><th>ID</th><th>Name</th><th>Description</th><th>Opcode</th></tr></thead><tbody>';
+        for (const a of algos.algorithms) {
+            algoHTML += `<tr><td>${a.id}</td><td style="font-weight:600">${a.name}</td><td style="color:var(--text-muted)">${a.description}</td><td class="mono">${a.opcode || '—'}</td></tr>`;
+        }
+        algoHTML += '</tbody></table></div>';
+    }
+
+    let daaHTML = '';
+    if (algos?.daa_modes) {
+        daaHTML = '<div class="table-wrap"><div class="table-header"><h3>DAA Modes</h3></div><table><thead><tr><th>ID</th><th>Name</th><th>Description</th></tr></thead><tbody>';
+        for (const d of algos.daa_modes) {
+            daaHTML += `<tr><td>${d.id}</td><td style="font-weight:600">${d.name}</td><td style="color:var(--text-muted)">${d.description}</td></tr>`;
+        }
+        daaHTML += '</tbody></table></div>';
+    }
+
+    app.innerHTML = `<h1 class="page-title">dMint Tokens <span class="subtitle">${fmtNum(total)} indexed</span></h1>${statsHTML}${tableHTML}${algoHTML}${daaHTML}`;
+    initSortableTable('dmint-table');
+}
+
+function initSortableTable(tableId) {
+    const table = document.getElementById(tableId);
+    if (!table) return;
+    const headers = table.querySelectorAll('thead th.sortable');
+    headers.forEach(th => {
+        th.addEventListener('click', () => {
+            const col = parseInt(th.dataset.col);
+            const type = th.dataset.type || 'str';
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            const isAsc = th.classList.contains('sort-asc');
+            const dir = isAsc ? -1 : 1;
+            headers.forEach(h => h.classList.remove('sort-asc', 'sort-desc'));
+            th.classList.add(dir === 1 ? 'sort-asc' : 'sort-desc');
+            rows.sort((a, b) => {
+                const av = a.children[col]?.dataset.sort ?? '';
+                const bv = b.children[col]?.dataset.sort ?? '';
+                if (type === 'num') return (parseFloat(av) - parseFloat(bv)) * dir;
+                return av.localeCompare(bv, undefined, { sensitivity: 'base' }) * dir;
+            });
+            rows.forEach(r => tbody.appendChild(r));
+        });
+    });
+}
+
+// ─── MEMPOOL ───
+async function renderMempool() {
+    app.innerHTML = loading();
+    const [infoR, statsR] = await Promise.allSettled([API.mempoolInfo(), API.mempoolStats()]);
+    const info = infoR.status === 'fulfilled' ? infoR.value : null;
+    const gs = statsR.status === 'fulfilled' ? statsR.value : null;
+
+    if (!info && !gs) {
+        app.innerHTML = `<h1 class="page-title">Mempool</h1>${emptyState('&#x1f4e8;', 'Mempool data is not available. Ensure the RXinDexer is connected to a Radiant node.')}`;
+        return;
+    }
+
+    let nodeHTML = '';
+    if (info) {
+        const maxMB = info.maxmempool ? (info.maxmempool / 1048576).toFixed(0) : null;
+        const usagePct = (info.maxmempool && info.usage) ? (info.usage / info.maxmempool * 100).toFixed(2) : null;
+        nodeHTML = '<div class="section-title"><span class="sec-icon">&#x26D3;</span> Node Mempool</div>';
+        nodeHTML += '<div class="stats-row">';
+        nodeHTML += statCard('Unconfirmed Txs', fmtNum(info.size), 'orange');
+        nodeHTML += statCard('Size', (info.bytes / 1024).toFixed(1) + ' KB', 'accent');
+        nodeHTML += statCard('Memory Usage', (info.usage / 1024).toFixed(1) + ' KB', 'purple');
+        if (maxMB) nodeHTML += statCard('Max Mempool', maxMB + ' MB', 'accent');
+        if (usagePct) nodeHTML += statCard('Usage', usagePct + '%', usagePct > 80 ? 'red' : 'green');
+        nodeHTML += statCard('Min Relay Fee', info.minrelaytxfee + ' RXD/KB', 'purple');
+        nodeHTML += statCard('Min Mempool Fee', info.mempoolminfee + ' RXD/KB', 'purple');
+        nodeHTML += '</div>';
+
+        nodeHTML += '<div class="detail-panel">';
+        nodeHTML += `<div class="detail-row"><div class="detail-label">Loaded</div><div class="detail-value">${info.loaded ? '<span class="badge badge-success">Yes</span>' : '<span class="badge badge-pending">No</span>'}</div></div>`;
+        nodeHTML += `<div class="detail-row"><div class="detail-label">Transaction Count</div><div class="detail-value">${fmtNum(info.size)}</div></div>`;
+        nodeHTML += `<div class="detail-row"><div class="detail-label">Total Size</div><div class="detail-value">${fmtNum(info.bytes)} bytes (${(info.bytes / 1024).toFixed(1)} KB)</div></div>`;
+        nodeHTML += `<div class="detail-row"><div class="detail-label">Memory Usage</div><div class="detail-value">${fmtNum(info.usage)} bytes (${(info.usage / 1024).toFixed(1)} KB)</div></div>`;
+        nodeHTML += `<div class="detail-row"><div class="detail-label">Max Mempool Size</div><div class="detail-value">${maxMB ? maxMB + ' MB' : '—'}</div></div>`;
+        nodeHTML += `<div class="detail-row"><div class="detail-label">Min Mempool Fee</div><div class="detail-value">${info.mempoolminfee} RXD/KB</div></div>`;
+        nodeHTML += `<div class="detail-row"><div class="detail-label">Min Relay Tx Fee</div><div class="detail-value">${info.minrelaytxfee} RXD/KB</div></div>`;
+        nodeHTML += '</div>';
+    }
+
+    let glyphHTML = '';
+    if (gs?.enabled) {
+        glyphHTML = '<div class="section-title"><span class="sec-icon">&#x1f4e6;</span> Glyph Mempool Tracking</div>';
+        glyphHTML += '<div class="stats-row">';
+        glyphHTML += statCard('Glyph Txs', fmtNum(gs.glyph_txs ?? 0), 'green');
+        glyphHTML += statCard('Refs Tracked', fmtNum(gs.glyph_refs_tracked ?? 0), 'accent');
+        glyphHTML += statCard('Scripthashes Tracked', fmtNum(gs.glyph_scripthashes_tracked ?? 0), 'accent');
+        glyphHTML += statCard('Swap Orders', fmtNum(gs.swap_orders ?? 0), 'purple');
+        glyphHTML += statCard('Swap Pairs Tracked', fmtNum(gs.swap_pairs_tracked ?? 0), 'purple');
+        glyphHTML += statCard('Swap Makers Tracked', fmtNum(gs.swap_makers_tracked ?? 0), 'purple');
+        glyphHTML += '</div>';
+    }
+
+    app.innerHTML = `
+        <div class="breadcrumb"><a href="#/">Home</a> / Mempool</div>
+        <h1 class="page-title">Mempool Summary</h1>
+        ${nodeHTML}${glyphHTML}`;
+}
+
+// ─── WAVE ───
+async function renderWave() {
+    const statsData = await API.waveStats().catch(() => null);
+
+    let statsHTML = '';
+    if (statsData) {
+        statsHTML = '<div class="stats-row">';
+        for (const [k, v] of Object.entries(statsData)) {
+            if (typeof v === 'number') statsHTML += statCard(k.replace(/_/g, ' '), fmtNum(v));
+        }
+        statsHTML += '</div>';
+    }
+
+    app.innerHTML = `
+        <h1 class="page-title">WAVE Naming System</h1>
+        <div class="wave-search">
+            <input type="text" id="waveInput" placeholder="Enter a WAVE name to resolve..." onkeydown="if(event.key==='Enter')resolveWave()">
+            <button class="btn btn-primary" onclick="resolveWave()">Resolve</button>
+        </div>
+        <div id="waveResult"></div>
+        ${statsHTML}`;
+}
+
+async function resolveWave() {
+    const input = document.getElementById('waveInput');
+    const resultDiv = document.getElementById('waveResult');
+    const name = input.value.trim();
+    if (!name) return;
+    resultDiv.innerHTML = loading();
+    try {
+        const data = await API.waveResolve(name);
+        if (data.available || data.resolved === false) {
+            resultDiv.innerHTML = `<div class="config-banner"><h3>${escHTML(name)}</h3><p style="margin-bottom:0"><span class="badge badge-pending">Available</span> &mdash; This name is available for registration.</p></div>`;
+        } else {
+            let details = `<div class="detail-panel">
+                <div class="detail-row"><div class="detail-label">Name</div><div class="detail-value" style="font-weight:600">${escHTML(data.name || name)}</div></div>`;
+            for (const [k, v] of Object.entries(data)) {
+                if (k === 'name') continue;
+                details += `<div class="detail-row"><div class="detail-label">${escHTML(k)}</div><div class="detail-value">${typeof v === 'object' ? `<pre style="font-size:0.82rem;margin:0">${escHTML(JSON.stringify(v, null, 2))}</pre>` : escHTML(String(v))}</div></div>`;
+            }
+            details += '</div>';
+            resultDiv.innerHTML = details;
+        }
+    } catch (e) {
+        resultDiv.innerHTML = errorBox('Lookup Failed', e.message);
+    }
+}
+
+// ─── SEARCH ───
+async function renderSearch(query) {
+    if (!query) { app.innerHTML = emptyState('&#x1f50d;', 'Enter a search term.'); return; }
+    app.innerHTML = loading();
+
+    let sections = '';
+
+    if (/^\d+$/.test(query)) {
+        try {
+            const block = await API.block(parseInt(query));
+            if (block) sections += `<div class="search-section"><h3>Block Found</h3><a href="#/block/${query}" class="btn btn-secondary btn-sm">View Block #${fmtNum(query)}</a></div>`;
+        } catch (e) { /* not a block */ }
+    }
+
+    if (/^[a-fA-F0-9]{64}$/.test(query)) {
+        sections += `<div class="search-section"><h3>Transaction</h3><a href="#/tx/${query}" class="btn btn-secondary btn-sm">View Transaction ${truncHash(query)}</a></div>`;
+    }
+
+    if (/^[a-fA-F0-9]{72}$/.test(query)) {
+        sections += `<div class="search-section"><h3>Token Reference</h3><a href="#/token/${query}" class="btn btn-secondary btn-sm">View Token ${truncHash(query)}</a></div>`;
+    }
+
+    try {
+        const results = await API.glyphSearch(query, 20);
+        const tokens = results.results || results || [];
+        if (tokens.length) {
+            sections += '<div class="search-section"><h3>Token Results</h3><div class="token-grid">';
+            for (const t of tokens) {
+                const rawRef = t.ref || t.glyph_id || '';
+                const navRef = refTo72Hex(rawRef);
+                const typeId = resolveTypeId(t);
+                sections += `<div class="token-card" onclick="navigate('/token/${navRef}')">
+                    <div class="top"><span class="name">${escHTML(t.name || 'Unnamed')}</span>${typeBadge(typeId)}</div>
+                    ${t.ticker ? `<span class="ticker">${escHTML(t.ticker)}</span>` : ''}
+                    <div class="ref">${refToDisplay(rawRef)}</div>
+                </div>`;
+            }
+            sections += '</div></div>';
+        }
+    } catch (e) { /* search failed */ }
+
+    if (!sections) sections = emptyState('&#x1f50d;', `No results found for "${escHTML(query)}"`);
+    app.innerHTML = `<h1 class="page-title">Search Results <span class="subtitle">for "${escHTML(query)}"</span></h1>${sections}`;
+}
+
+// ─── SETTINGS ───
+function renderSettings() {
+    app.innerHTML = `
+        <h1 class="page-title">API Settings</h1>
+        <div class="config-banner">
+            <h3>RXinDexer REST API Endpoint</h3>
+            <p>Enter the URL of your RXinDexer server with the REST API enabled (<code>REST_API_ENABLED=1</code>). The server must have CORS enabled for this domain.</p>
+            <div class="config-row">
+                <input type="text" id="cfgApiUrl" value="${API_BASE}" placeholder="https://your-rxindexer-host:8000">
+                <button class="btn btn-primary" onclick="saveConfig()">Save &amp; Connect</button>
+            </div>
+            <div style="margin-top:16px">
+                <h4 style="font-size:0.88rem;margin-bottom:8px">Quick Setup</h4>
+                <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:6px">To enable the REST API on your RXinDexer, set these environment variables:</p>
+                <div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:12px 16px;font-family:monospace;font-size:0.82rem;color:var(--green)">REST_API_ENABLED=1
+REST_API_HOST=0.0.0.0
+REST_API_PORT=8000
+ALLOWED_ORIGINS=https://radiantcore.org,https://explorer.radiantcore.org</div>
+            </div>
+        </div>
+        <div id="connStatus"></div>`;
+}
+
+function showSettings() { navigate('/settings'); }
+
+async function saveConfig() {
+    const input = document.getElementById('cfgApiUrl');
+    const url = input.value.trim().replace(/\/+$/, '');
+    API_BASE = url;
+    localStorage.setItem('rxd_explorer_api', url);
+    const statusDiv = document.getElementById('connStatus');
+    if (statusDiv) statusDiv.innerHTML = loading();
+    try {
+        const data = await API.health();
+        if (statusDiv) statusDiv.innerHTML = `<div class="config-banner" style="border-color:rgba(52,211,153,0.3)"><h3 style="color:var(--green)">&#x2705; Connected</h3><p>Status: ${data.status} &middot; Height: ${fmtNum(data.sync_height)} &middot; DB: ${data.database}</p></div>`;
+        setTimeout(() => navigate('/'), 1500);
+    } catch (e) {
+        if (statusDiv) statusDiv.innerHTML = errorBox('Connection Failed', e.message);
+    }
+}
+
+// ─── SEARCH HANDLER ───
+function handleSearch(query) {
+    query = query.trim();
+    if (!query) return;
+    if (/^\d+$/.test(query)) navigate(`/block/${query}`);
+    else if (/^[a-fA-F0-9]{64}$/i.test(query)) navigate(`/tx/${query}`);
+    else if (/^[a-fA-F0-9]{72}$/i.test(query)) navigate(`/token/${query}`);
+    else navigate(`/search/${encodeURIComponent(query)}`);
+}
+
+// ─── EVENT LISTENERS ───
+document.getElementById('globalSearch').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') handleSearch(e.target.value);
+});
+
+document.getElementById('menuToggle').addEventListener('click', () => {
+    document.getElementById('navLinks').classList.toggle('open');
+});
+
+window.addEventListener('hashchange', route);
+window.addEventListener('load', route);
+
+// Close mobile menu on navigation
+window.addEventListener('hashchange', () => {
+    document.getElementById('navLinks').classList.remove('open');
+});
+</script>
+
+</body>
+</html>

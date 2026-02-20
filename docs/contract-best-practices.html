@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Contract Best Practices — Radiant Core Docs</title>
+    <meta name="description" content="Best practices for Radiant smart contracts: security patterns, token templates, testing, optimization, vulnerabilities, and auditing checklists.">
+    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="stylesheet" href="docs.css">
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="container">
+        <a href="../" class="nav-brand"><img src="../radiant-logo-darkmode.jpg" alt="Radiant"> Radiant Core</a>
+        <button class="hamburger" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Menu">&#9776;</button>
+        <ul class="nav-links">
+            <li><a href="../#features">Features</a></li>
+            <li><a href="../#v2-upgrade">V2 Upgrade</a></li>
+            <li><a href="./" class="nav-active">Docs</a></li>
+            <li><a href="../#ecosystem">Ecosystem</a></li>
+            <li><a href="../#mining">Mining</a></li>
+            <li><a href="../explorer/">Explorer</a></li>
+            <li><a href="https://github.com/Radiant-Core" class="nav-cta">GitHub ↗</a></li>
+        </ul>
+    </div>
+</nav>
+
+<div class="doc-container">
+    <div class="breadcrumb"><a href="./">Docs</a> <span class="sep">/</span> <span>Smart Contract Best Practices</span></div>
+
+    <div class="doc-header">
+        <h1>Radiant Smart Contract Best Practices</h1>
+        <div class="doc-meta"><span>Version 1.0</span> <span>Last Updated: February 2026</span></div>
+    </div>
+
+    <div class="doc-content">
+
+<blockquote>
+<p><strong>V2 Hard Fork (Radiant Core 2.1, Block 410,000):</strong> Six new/re-enabled opcodes are available post-fork: OP_BLAKE3 (<code>0xee</code>), OP_K12 (<code>0xef</code>) for on-chain hash verification; OP_LSHIFT (<code>0x98</code>), OP_RSHIFT (<code>0x99</code>) for bitwise shifts; OP_2MUL (<code>0x8d</code>), OP_2DIV (<code>0x8e</code>) for numeric scaling. Use these for on-chain PoW validation (dMint v2) and ASERT-lite DAA computation. Contracts using these opcodes must only be deployed after the activation height.</p>
+</blockquote>
+
+<hr>
+
+<h2 id="design-principles">1. Contract Design Principles</h2>
+
+<h3>1.1 Keep It Simple</h3>
+<pre><code>// ✅ GOOD: Simple, focused contract
+contract SimpleTransfer(bytes20 OWNER_PKH)
+function (sig s, pubkey pk) {
+    require(hash160(pk) == OWNER_PKH);
+    require(checkSig(s, pk));
+}
+
+// ❌ BAD: Overly complex single contract
+contract DoEverything(...)
+function (...) {
+    // 500 lines of logic — hard to audit
+}</code></pre>
+
+<h3>1.2 Single Responsibility</h3>
+<table>
+<thead><tr><th>Contract Type</th><th>Responsibility</th></tr></thead>
+<tbody>
+<tr><td>Token Contract</td><td>Hold and transfer value</td></tr>
+<tr><td>Minting Contract</td><td>Create new tokens</td></tr>
+<tr><td>Swap Contract</td><td>Exchange tokens</td></tr>
+<tr><td>Governance Contract</td><td>Voting and proposals</td></tr>
+</tbody>
+</table>
+
+<h3>1.3 Explicit Over Implicit</h3>
+<pre><code>// ✅ GOOD: Explicit checks
+function transfer(sig s, pubkey pk, int amount) {
+    require(amount > 0);
+    require(amount &lt;= tx.inputs[this.activeInputIndex].value);
+    require(hash160(pk) == OWNER_PKH);
+    require(checkSig(s, pk));
+}
+
+// ❌ BAD: Relying on implicit behavior
+function transfer(sig s, pubkey pk, int amount) {
+    require(checkSig(s, pk));  // Assumes amount is valid
+}</code></pre>
+
+<hr>
+
+<h2 id="security-patterns">2. Security Patterns</h2>
+
+<h3>2.1 Standard P2PKH Authorization</h3>
+<pre><code>function (sig s, pubkey pk) {
+    require(hash160(pk) == OWNER_PKH);
+    require(checkSig(s, pk));
+}</code></pre>
+
+<h3>2.2 Multi-Signature Authorization</h3>
+<pre><code>// 2-of-3 multisig pattern
+contract MultiSig(pubkey PK1, pubkey PK2, pubkey PK3)
+function (sig s1, sig s2) {
+    int valid = 0;
+    if (checkSig(s1, PK1)) valid = valid + 1;
+    if (checkSig(s2, PK2)) valid = valid + 1;
+    if (checkSig(s1, PK3) || checkSig(s2, PK3)) valid = valid + 1;
+    require(valid >= 2);
+}</code></pre>
+
+<h3>2.3 Time-Locked Authorization</h3>
+<pre><code>contract TimeLock(bytes20 OWNER_PKH, int UNLOCK_TIME)
+function (sig s, pubkey pk) {
+    require(tx.time >= UNLOCK_TIME);
+    require(hash160(pk) == OWNER_PKH);
+    require(checkSig(s, pk));
+}</code></pre>
+
+<h3>2.4 Value Conservation (CRITICAL for token contracts)</h3>
+<pre><code>// ✅ GOOD: Explicit conservation check
+contract FungibleToken(bytes36 REF, bytes20 OWNER_PKH)
+function (sig s, pubkey pk) {
+    require(hash160(pk) == OWNER_PKH);
+    require(checkSig(s, pk));
+
+    stateSeparator;
+    bytes36 ref = pushInputRef(REF);
+    bytes32 csh = hash256(tx.inputs[this.activeInputIndex].codeScript);
+
+    // CONSERVATION: inputs >= outputs
+    int inputSum = tx.inputs.codeScriptValueSum(csh);
+    int outputSum = tx.outputs.codeScriptValueSum(csh);
+    require(inputSum >= outputSum);
+}</code></pre>
+
+<h3>2.5 Induction Proof Patterns</h3>
+
+<h4>Code-Continuity Induction</h4>
+<p>Verify that the parent UTXO used the same contract code. Since the parent also verified its parent, this creates an inductive chain guaranteeing all ancestors followed the same rules:</p>
+<pre><code>// ✅ GOOD: Code-continuity induction step
+bytes32 csh = hash256(tx.inputs[this.activeInputIndex].codeScript);
+require(tx.outputs.codeScriptCount(csh) >= 1);
+require(tx.inputs.codeScriptValueSum(csh) >= tx.outputs.codeScriptValueSum(csh));</code></pre>
+
+<h4>Fee-Bounded Transfers</h4>
+<pre><code>// ✅ GOOD: Prevent excessive fee extraction
+int fee = tx.state.inputSum - tx.state.outputSum;
+require(fee >= 0);
+require(fee &lt;= maxFee);</code></pre>
+
+<h3>2.6 Overflow Protection</h3>
+<pre><code>// ✅ SAFE: Pre-check for overflow
+function safeCalculation(int a, int b) {
+    require(a >= 0 &amp;&amp; b >= 0);
+    require(a &lt;= 9223372036854775807 / b);  // MAX_INT64 / b
+    int result = a * b;
+}</code></pre>
+
+<hr>
+
+<h2 id="token-patterns">3. Token Contract Patterns</h2>
+
+<h3>3.1 Fungible Token (FT)</h3>
+<pre><code>contract FungibleToken(bytes36 REF, bytes20 OWNER_PKH)
+function (sig s, pubkey pk) {
+    require(hash160(pk) == OWNER_PKH);
+    require(checkSig(s, pk));
+    stateSeparator;
+    bytes36 ref = pushInputRef(REF);
+    bytes32 csh = hash256(tx.inputs[this.activeInputIndex].codeScript);
+    require(tx.inputs.codeScriptValueSum(csh) >= tx.outputs.codeScriptValueSum(csh));
+    require(tx.outputs.refOutputCount(ref) == tx.outputs.codeScriptOutputCount(csh));
+}</code></pre>
+
+<h3>3.2 Non-Fungible Token (NFT)</h3>
+<pre><code>contract NFT(bytes36 REF, bytes20 OWNER_PKH)
+function (sig s, pubkey pk) {
+    require(hash160(pk) == OWNER_PKH);
+    require(checkSig(s, pk));
+    stateSeparator;
+    bytes36 ref = pushInputRefSingleton(REF);
+    require(tx.outputs.refOutputCount(ref) == 1);
+}</code></pre>
+
+<h3>3.3 NFT with Royalties</h3>
+<pre><code>contract RoyaltyNFT(
+    bytes36 REF, bytes20 OWNER_PKH,
+    bytes20 CREATOR_PKH, int ROYALTY_BPS
+)
+function (sig s, pubkey pk) {
+    require(hash160(pk) == OWNER_PKH);
+    require(checkSig(s, pk));
+    stateSeparator;
+    bytes36 ref = pushInputRefSingleton(REF);
+    require(tx.outputs.refOutputCount(ref) == 1);
+
+    int inputValue = tx.inputs[this.activeInputIndex].value;
+    int outputValue = tx.outputs[0].value;
+    if (outputValue &lt; inputValue) {
+        int saleProceeds = inputValue - outputValue;
+        int royalty = saleProceeds * ROYALTY_BPS / 10000;
+        // Verify royalty payment to creator...
+    }
+}</code></pre>
+
+<hr>
+
+<h2 id="testing">4. Testing Strategies</h2>
+
+<h3>4.1 Unit Testing</h3>
+<pre><code>describe('FungibleToken', () =&gt; {
+  it('should allow owner to transfer', async () =&gt; {
+    const tx = await contract.functions.transfer(sig, pk, amount);
+    expect(tx).to.exist;
+  });
+
+  it('should reject non-owner transfer', async () =&gt; {
+    await expect(contract.functions.transfer(wrongSig, wrongPk, amount)).to.be.rejected;
+  });
+
+  it('should enforce conservation', async () =&gt; {
+    await expect(contract.functions.transfer(sig, pk, inputAmount + 1)).to.be.rejected;
+  });
+});</code></pre>
+
+<h3>4.2 Debugging with rxdeb</h3>
+<pre><code># Debug a specific transaction
+rxdeb --tx=&lt;spending_tx_hex&gt; --txin=&lt;input_tx_hex&gt;
+
+# Debug RadiantScript artifact
+rxdeb --artifact=MyContract.json --function=transfer --args='["sig", "pk"]'
+
+# Step through execution
+rxdeb&gt; step
+rxdeb&gt; stack
+rxdeb&gt; source</code></pre>
+
+<hr>
+
+<h2 id="optimization">5. Gas and Size Optimization</h2>
+
+<h3>Script Size Limits</h3>
+<table>
+<thead><tr><th>Limit</th><th>Value</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>Max script size</td><td>32 MB</td><td>Consensus limit</td></tr>
+<tr><td>Recommended max</td><td>10 KB</td><td>Reasonable fees</td></tr>
+<tr><td>Optimal</td><td>&lt; 1 KB</td><td>Most efficient</td></tr>
+</tbody>
+</table>
+
+<h3>Optimization Techniques</h3>
+<pre><code>// ✅ GOOD: Reuse computed values
+bytes32 csh = hash256(tx.inputs[this.activeInputIndex].codeScript);
+int inputSum = tx.inputs.codeScriptValueSum(csh);
+int outputSum = tx.outputs.codeScriptValueSum(csh);
+
+// ❌ BAD: Recompute same values
+require(tx.inputs.codeScriptValueSum(hash256(...)) >= ...);
+require(tx.outputs.codeScriptValueSum(hash256(...)) &lt;= ...);</code></pre>
+
+<hr>
+
+<h2 id="vulnerabilities">6. Common Vulnerabilities</h2>
+
+<h3>6.1 Missing Conservation Check</h3>
+<pre><code>// ❌ VULNERABLE: Attacker can create infinite tokens!
+contract BadToken(bytes36 REF, bytes20 OWNER_PKH)
+function (sig s, pubkey pk) {
+    require(checkSig(s, pk));
+    stateSeparator;
+    pushInputRef(REF);
+    // Missing: inputSum >= outputSum check
+}</code></pre>
+
+<h3>6.2 Wrong Reference Type</h3>
+<pre><code>// ❌ VULNERABLE: Using normal ref for NFT allows duplication
+pushInputRef(REF);  // Should be pushInputRefSingleton!</code></pre>
+
+<h3>6.3 Integer Overflow</h3>
+<pre><code>// ❌ VULNERABLE: No overflow check
+int result = a * b;  // Can overflow!
+
+// ✅ SAFE: Pre-check
+require(a &lt;= 9223372036854775807 / b);
+int result = a * b;</code></pre>
+
+<h3>6.4 Missing Output Validation</h3>
+<pre><code>// ❌ VULNERABLE: Accepts any outputs — attacker can drain funds
+// ✅ SAFE: Validate outputs explicitly
+require(tx.outputs[0].value >= expectedOutput);
+require(tx.outputs[0].lockingBytecode == expectedScript);</code></pre>
+
+<hr>
+
+<h2 id="auditing">7. Auditing Checklist</h2>
+
+<h3>Authorization</h3>
+<ul>
+<li>All functions require proper authorization</li>
+<li>Multi-sig implemented correctly (if applicable)</li>
+<li>Time-locks work as expected</li>
+</ul>
+
+<h3>Token Mechanics</h3>
+<ul>
+<li>Conservation enforced (inputs ≥ outputs)</li>
+<li>Correct reference type (singleton for NFT)</li>
+<li>Reference count validated</li>
+<li>Code script hash validated</li>
+</ul>
+
+<h3>Arithmetic</h3>
+<ul>
+<li>No integer overflow possible</li>
+<li>Division by zero prevented</li>
+<li>Negative values handled correctly</li>
+<li>Bounds checked before operations</li>
+</ul>
+
+<h3>Edge Cases</h3>
+<ul>
+<li>Zero amount transfers handled</li>
+<li>Maximum values tested</li>
+<li>Empty inputs/outputs handled</li>
+<li>Single and multiple inputs/outputs work</li>
+</ul>
+
+<h3>Testing</h3>
+<ul>
+<li>Unit tests for all functions</li>
+<li>Integration tests for full flows</li>
+<li>Fuzz testing completed</li>
+<li>Edge case tests passing</li>
+</ul>
+
+<hr>
+
+<h2 id="deployment">8. Deployment Guidelines</h2>
+
+<h3>Pre-Deployment</h3>
+<pre><code># 1. Compile with all checks
+npx rxdc MyContract.rxd -o MyContract.json --debug
+
+# 2. Run full test suite
+npm test
+
+# 3. Audit the compiled output
+rxdeb --artifact=MyContract.json --decode
+
+# 4. Check script size
+npx rxdc MyContract.rxd --size</code></pre>
+
+<h3>Gradual Rollout</h3>
+<ol>
+<li><strong>Phase 1:</strong> Internal testing (1 week)</li>
+<li><strong>Phase 2:</strong> Testnet public beta (2 weeks)</li>
+<li><strong>Phase 3:</strong> Mainnet limited (small amounts)</li>
+<li><strong>Phase 4:</strong> Mainnet full launch</li>
+</ol>
+
+<hr>
+
+<h3>Quick Reference</h3>
+
+<p><strong>Do's ✅</strong></p>
+<ul>
+<li>Use singleton references for NFTs</li>
+<li>Enforce conservation in token contracts</li>
+<li>Check for overflows before arithmetic</li>
+<li>Validate all outputs explicitly</li>
+<li>Test on testnet before mainnet</li>
+<li>Keep contracts simple and focused</li>
+</ul>
+
+<p><strong>Don'ts ❌</strong></p>
+<ul>
+<li>Don't skip conservation checks</li>
+<li>Don't use normal refs for NFTs</li>
+<li>Don't trust input values blindly</li>
+<li>Don't deploy without testing</li>
+<li>Don't combine too many responsibilities</li>
+</ul>
+
+<p><em>For debugging help, see the <a href="https://github.com/Radiant-Core/rxdeb">rxdeb documentation</a>. For security audits, contact the Radiant community.</em></p>
+
+    </div>
+    <div class="doc-footer">
+        <span><a href="./">← All Docs</a></span>
+        <span>&copy; 2022–2026 Radiant Core Contributors</span>
+    </div>
+</div>
+</body>
+</html>

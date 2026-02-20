@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wallets Guide — Radiant Core Docs</title>
+    <meta name="description" content="Guide to Radiant wallets: Photonic, Electron, Chainbow, Tangem, Glyphium, and the Radiant Core node wallet.">
+    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="stylesheet" href="docs.css">
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="container">
+        <a href="../" class="nav-brand"><img src="../radiant-logo-darkmode.jpg" alt="Radiant"> Radiant Core</a>
+        <button class="hamburger" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Menu">&#9776;</button>
+        <ul class="nav-links">
+            <li><a href="../#features">Features</a></li>
+            <li><a href="../#v2-upgrade">V2 Upgrade</a></li>
+            <li><a href="./" class="nav-active">Docs</a></li>
+            <li><a href="../#ecosystem">Ecosystem</a></li>
+            <li><a href="../#mining">Mining</a></li>
+            <li><a href="../explorer/">Explorer</a></li>
+            <li><a href="https://github.com/Radiant-Core" class="nav-cta">GitHub ↗</a></li>
+        </ul>
+    </div>
+</nav>
+
+<div class="doc-container">
+    <div class="breadcrumb"><a href="./">Docs</a> <span class="sep">/</span> <span>Wallets Guide</span></div>
+
+    <div class="doc-header">
+        <h1>Radiant Wallets Guide</h1>
+        <div class="doc-meta"><span>Version 1.0</span> <span>Last Updated: February 2026</span></div>
+    </div>
+
+    <div class="doc-content">
+
+<h2 id="overview">Overview</h2>
+
+<p>Several wallets are available for storing, sending, and receiving RXD and Glyph tokens. This guide covers each option to help you choose the right wallet for your needs.</p>
+
+<blockquote>
+<p><strong>V2 Hard Fork Compatibility (Block 410,000):</strong> After the V2 hard fork, wallets should be updated to support the new minimum relay fee (0.1 RXD/kB after block 415,000). Ensure your wallet software is up to date for continued smooth operation.</p>
+</blockquote>
+
+<hr>
+
+<h2 id="comparison">Wallet Comparison</h2>
+
+<table>
+<thead><tr><th>Wallet</th><th>Platform</th><th>RXD</th><th>Glyph</th><th>dMint</th><th>Open Source</th></tr></thead>
+<tbody>
+<tr><td><strong>Photonic</strong></td><td>Web, Desktop (Tauri)</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td><strong>Electron</strong></td><td>Win, Mac, Linux, Android</td><td>✅</td><td>❌</td><td>❌</td><td>✅</td></tr>
+<tr><td><strong>Chainbow</strong></td><td>Android, iOS</td><td>✅</td><td>✅</td><td>❌</td><td>❌</td></tr>
+<tr><td><strong>Tangem</strong></td><td>Hardware + App</td><td>✅</td><td>❌</td><td>❌</td><td>Partial</td></tr>
+<tr><td><strong>Glyphium</strong></td><td>Web</td><td>✅</td><td>✅</td><td>❌</td><td>❌</td></tr>
+<tr><td><strong>Radiant Core</strong></td><td>CLI (all platforms)</td><td>✅</td><td>❌</td><td>❌</td><td>✅</td></tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2 id="photonic">Photonic Wallet</h2>
+
+<p><strong>The primary wallet for Glyph tokens and NFTs.</strong></p>
+
+<h3>Features</h3>
+<ul>
+<li>Full Glyph v2 token support (FT, NFT, dMint, Containers)</li>
+<li>Mint NFTs and fungible tokens</li>
+<li>Deploy dMint mining contracts</li>
+<li>IPFS content support</li>
+<li>Transaction history with token details</li>
+<li>Address book</li>
+<li>Desktop app via Tauri (cross-platform)</li>
+</ul>
+
+<h3>Access</h3>
+<table>
+<thead><tr><th>Method</th><th>Link</th></tr></thead>
+<tbody>
+<tr><td>Web</td><td><a href="https://photonic.radiant4people.com/">photonic.radiant4people.com</a></td></tr>
+<tr><td>Chrome Extension</td><td><a href="https://chromewebstore.google.com/detail/photonic-wallet/ldagidbelgfoonfhbggfgmlhaccfeepb">Chrome Web Store</a></td></tr>
+<tr><td>Source Code</td><td><a href="https://github.com/Radiant-Core/Photonic-Wallet">GitHub</a></td></tr>
+</tbody>
+</table>
+
+<h3>Setup</h3>
+<ol>
+<li>Visit <a href="https://photonic.radiant4people.com/">photonic.radiant4people.com</a></li>
+<li>Click "Create Wallet"</li>
+<li><strong>Write down your seed phrase</strong> (12 words) — this is the ONLY way to recover</li>
+<li>Set a password for local encryption</li>
+<li>Your wallet is ready</li>
+</ol>
+
+<h3>Sending RXD</h3>
+<ol>
+<li>Click "Send"</li>
+<li>Enter recipient address</li>
+<li>Enter amount in RXD</li>
+<li>Review and confirm</li>
+</ol>
+
+<h3>Minting a Glyph NFT</h3>
+<ol>
+<li>Navigate to "Mint" tab</li>
+<li>Select "NFT"</li>
+<li>Fill in name, description, upload image</li>
+<li>Set optional properties (royalties, container, etc.)</li>
+<li>Click "Mint" and confirm transaction</li>
+</ol>
+
+<hr>
+
+<h2 id="electron">Electron Wallet</h2>
+
+<p><strong>Traditional desktop wallet for RXD payments.</strong></p>
+
+<h3>Features</h3>
+<ul>
+<li>RXD send/receive</li>
+<li>Multiple address types</li>
+<li>Transaction history</li>
+<li>Import/export private keys</li>
+<li>Multi-platform</li>
+</ul>
+
+<h3>Download</h3>
+<table>
+<thead><tr><th>Platform</th><th>Link</th></tr></thead>
+<tbody>
+<tr><td>Windows</td><td><a href="https://github.com/RadiantBlockchain/electron-radiant/releases">GitHub Releases</a></td></tr>
+<tr><td>macOS</td><td><a href="https://github.com/RadiantBlockchain/electron-radiant/releases">GitHub Releases</a></td></tr>
+<tr><td>Linux</td><td><a href="https://github.com/RadiantBlockchain/electron-radiant/releases">GitHub Releases</a></td></tr>
+<tr><td>Android</td><td><a href="https://github.com/AntaresCommunity/AntaresCommunity">AntaresCommunity</a></td></tr>
+</tbody>
+</table>
+
+<h3>Setup</h3>
+<ol>
+<li>Download for your platform</li>
+<li>Install and open</li>
+<li>Create new wallet</li>
+<li><strong>Save your seed phrase securely</strong></li>
+<li>Set password</li>
+<li>Wait for sync to complete</li>
+</ol>
+
+<hr>
+
+<h2 id="chainbow">Chainbow Wallet</h2>
+
+<p><strong>Mobile wallet with Glyph support.</strong></p>
+
+<h3>Features</h3>
+<ul>
+<li>RXD and Glyph token support</li>
+<li>QR code scanning</li>
+<li>Clean mobile interface</li>
+<li>Push notifications</li>
+</ul>
+
+<h3>Download</h3>
+<table>
+<thead><tr><th>Platform</th><th>Link</th></tr></thead>
+<tbody>
+<tr><td>Android</td><td><a href="https://play.google.com/store/apps/details?id=com.nicegame.chainbow">Google Play</a></td></tr>
+<tr><td>iOS</td><td><a href="https://apps.apple.com/app/chainbow/id6450241293">App Store</a></td></tr>
+<tr><td>Website</td><td><a href="https://chainbow.io/">chainbow.io</a></td></tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2 id="tangem">Tangem Hardware Wallet</h2>
+
+<p><strong>Cold storage for RXD.</strong></p>
+
+<h3>Features</h3>
+<ul>
+<li>NFC-based hardware wallet</li>
+<li>No battery needed</li>
+<li>Backup cards available</li>
+<li>Mobile app interface</li>
+</ul>
+
+<h3>Setup</h3>
+<ol>
+<li>Order cards from <a href="https://tangem.com/">tangem.com</a> (use code RADIANT for 10% discount)</li>
+<li>Download Tangem app (iOS/Android)</li>
+<li>Tap card to phone to initialize</li>
+<li>Add Radiant (RXD) to your wallet</li>
+<li>Set up backup cards (recommended)</li>
+</ol>
+
+<hr>
+
+<h2 id="glyphium">Glyphium Wallet</h2>
+
+<p><strong>Web wallet with Glyph token support and marketplace features.</strong></p>
+
+<h3>Features</h3>
+<ul>
+<li>RXD and Glyph token support</li>
+<li>Token marketplace</li>
+<li>Web-based access</li>
+</ul>
+
+<h3>Access</h3>
+<ul>
+<li>Web: <a href="https://wallet.glyphium.com/">wallet.glyphium.com</a></li>
+</ul>
+
+<hr>
+
+<h2 id="core-wallet">Radiant Core Node Wallet</h2>
+
+<p><strong>CLI wallet built into the Radiant Core node.</strong></p>
+
+<h3>Features</h3>
+<ul>
+<li>Full node validation</li>
+<li>RPC interface</li>
+<li>Multiple wallet support</li>
+<li>Best for mining and advanced users</li>
+</ul>
+
+<h3>Commands</h3>
+
+<pre><code># Create wallet
+radiant-cli createwallet "mywallet"
+
+# Get new address
+radiant-cli -rpcwallet=mywallet getnewaddress
+
+# Check balance
+radiant-cli -rpcwallet=mywallet getbalance
+
+# Send RXD
+radiant-cli -rpcwallet=mywallet sendtoaddress "1Address..." 100
+
+# List UTXOs
+radiant-cli -rpcwallet=mywallet listunspent
+
+# Backup wallet
+radiant-cli -rpcwallet=mywallet backupwallet "/path/to/backup.dat"</code></pre>
+
+<hr>
+
+<h2 id="recovery">Wallet Recovery</h2>
+
+<h3>From Seed Phrase</h3>
+<ol>
+<li>Open your wallet application</li>
+<li>Select "Restore" or "Import" option</li>
+<li>Enter your 12-word (or 24-word) seed phrase</li>
+<li>Set a new password</li>
+<li>Wait for wallet to sync</li>
+</ol>
+
+<h3>From Private Key (WIF)</h3>
+<ol>
+<li>In Electron Wallet: Wallet → Private Keys → Import</li>
+<li>Paste WIF key (starts with K or L for mainnet)</li>
+<li>Funds will appear after scan</li>
+</ol>
+
+<h3>Important Notes</h3>
+<ul>
+<li><strong>Photonic ↔ Electron</strong>: Same seed phrase can restore in either wallet (BIP44 compatible)</li>
+<li><strong>Chainbow</strong>: Uses its own derivation path — restore only in Chainbow</li>
+<li><strong>Tangem</strong>: Cannot export keys — use backup cards only</li>
+</ul>
+
+<hr>
+
+<h2 id="security">Security Best Practices</h2>
+
+<h3>Seed Phrase</h3>
+<ul>
+<li>Write on paper, store in multiple secure locations</li>
+<li><strong>NEVER</strong> store digitally (no photos, cloud, email)</li>
+<li>Consider metal backup for fire/water resistance</li>
+<li>Never share with anyone</li>
+</ul>
+
+<h3>General Security</h3>
+<ul>
+<li>Always verify addresses before sending</li>
+<li>Use a hardware wallet for large amounts</li>
+<li>Keep wallet software updated</li>
+<li>Use strong, unique passwords</li>
+<li>Enable all available security features</li>
+<li>Send a small test amount first for large transfers</li>
+</ul>
+
+<h3>Red Flags</h3>
+<ul>
+<li>Anyone asking for your seed phrase</li>
+<li>"Support" contacting you via DM</li>
+<li>Websites asking you to "validate" your wallet</li>
+<li>Download links from unofficial sources</li>
+</ul>
+
+<hr>
+
+<h2 id="troubleshooting">Troubleshooting</h2>
+
+<table>
+<thead><tr><th>Issue</th><th>Solution</th></tr></thead>
+<tbody>
+<tr><td>Balance shows 0</td><td>Wait for sync; check correct network; verify seed phrase was entered correctly</td></tr>
+<tr><td>Transaction stuck</td><td>Fee may be too low (min 0.01 RXD/kB); check mempool status</td></tr>
+<tr><td>"Invalid address"</td><td>Verify address format (mainnet starts with 1 or 3); check for extra spaces</td></tr>
+<tr><td>Can't connect</td><td>Check internet; try different ElectrumX server; check if maintenance is ongoing</td></tr>
+<tr><td>Glyph tokens missing</td><td>Use Photonic Wallet (only wallet with full Glyph support); check correct address</td></tr>
+<tr><td>Wallet file corrupted</td><td>Restore from seed phrase in a new installation</td></tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2 id="address-formats">Address Formats</h2>
+
+<table>
+<thead><tr><th>Type</th><th>Prefix</th><th>Example</th><th>Use</th></tr></thead>
+<tbody>
+<tr><td>P2PKH (Mainnet)</td><td>1</td><td>1A1zP1eP5QG...</td><td>Standard addresses</td></tr>
+<tr><td>P2SH (Mainnet)</td><td>3</td><td>3J98t1Wpez...</td><td>Script addresses</td></tr>
+<tr><td>P2PKH (Testnet)</td><td>m or n</td><td>mh7jj2ELSQUv...</td><td>Testnet standard</td></tr>
+<tr><td>P2SH (Testnet)</td><td>2</td><td>2MzQwSSnBH...</td><td>Testnet script</td></tr>
+</tbody>
+</table>
+
+<p><em>For questions and wallet support, join the <a href="https://discord.gg/radiantblockchain">Radiant Discord</a> community.</em></p>
+
+    </div>
+    <div class="doc-footer">
+        <span><a href="./">← All Docs</a></span>
+        <span>&copy; 2022–2026 Radiant Core Contributors</span>
+    </div>
+</div>
+</body>
+</html>

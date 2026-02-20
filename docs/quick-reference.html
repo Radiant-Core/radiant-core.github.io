@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Reference — Radiant Core Docs</title>
+    <meta name="description" content="Radiant blockchain quick reference: network parameters, CLI commands, Glyph protocol IDs, opcodes, and code snippets.">
+    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="stylesheet" href="docs.css">
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="container">
+        <a href="../" class="nav-brand"><img src="../radiant-logo-darkmode.jpg" alt="Radiant"> Radiant Core</a>
+        <button class="hamburger" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Menu">&#9776;</button>
+        <ul class="nav-links">
+            <li><a href="../#features">Features</a></li>
+            <li><a href="../#v2-upgrade">V2 Upgrade</a></li>
+            <li><a href="./" class="nav-active">Docs</a></li>
+            <li><a href="../#ecosystem">Ecosystem</a></li>
+            <li><a href="../#mining">Mining</a></li>
+            <li><a href="../explorer/">Explorer</a></li>
+            <li><a href="https://github.com/Radiant-Core" class="nav-cta">GitHub ↗</a></li>
+        </ul>
+    </div>
+</nav>
+
+<div class="doc-container">
+    <div class="breadcrumb"><a href="./">Docs</a> <span class="sep">/</span> <span>Quick Reference</span></div>
+
+    <div class="doc-header">
+        <h1>Radiant Quick Reference</h1>
+        <div class="doc-meta"><span>Last Updated: February 2026</span></div>
+    </div>
+
+    <div class="doc-content">
+
+<h2 id="network-parameters">Network Parameters</h2>
+
+<table>
+<thead><tr><th>Parameter</th><th>Mainnet</th><th>Testnet</th></tr></thead>
+<tbody>
+<tr><td><strong>P2P Port</strong></td><td>7333</td><td>17333</td></tr>
+<tr><td><strong>RPC Port</strong></td><td>7332</td><td>17332</td></tr>
+<tr><td><strong>Address Prefix</strong></td><td>1 (P2PKH), 3 (P2SH)</td><td>m/n (P2PKH), 2 (P2SH)</td></tr>
+<tr><td><strong>Block Time</strong></td><td>5 minutes</td><td>5 minutes</td></tr>
+<tr><td><strong>Block Size</strong></td><td>256 MB</td><td>256 MB</td></tr>
+<tr><td><strong>Algorithm</strong></td><td>SHA512/256</td><td>SHA512/256</td></tr>
+<tr><td><strong>Core 2.0 Activation</strong></td><td>Block 410,000</td><td>Block 410,000</td></tr>
+<tr><td><strong>Fee Enforcement</strong></td><td>Block 415,000</td><td>Block 6,000</td></tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2 id="units">Units</h2>
+
+<table>
+<thead><tr><th>Unit</th><th>Photons</th><th>RXD</th></tr></thead>
+<tbody>
+<tr><td>1 RXD</td><td>100,000,000</td><td>1</td></tr>
+<tr><td>1 mRXD</td><td>100,000</td><td>0.001</td></tr>
+<tr><td>1 μRXD</td><td>100</td><td>0.000001</td></tr>
+<tr><td>1 photon</td><td>1</td><td>0.00000001</td></tr>
+</tbody>
+</table>
+
+<pre><code>RXD = photons / 100,000,000
+photons = RXD × 100,000,000</code></pre>
+
+<hr>
+
+<h2 id="electrumx-servers">ElectrumX Servers</h2>
+
+<h3>Mainnet</h3>
+
+<table>
+<thead><tr><th>Server</th><th>TCP</th><th>SSL</th><th>WSS</th></tr></thead>
+<tbody>
+<tr><td>electrumx.radiantexplorer.com</td><td>50010</td><td>50012</td><td>50011</td></tr>
+<tr><td>electrumx.radiantblockchain.org</td><td>50010</td><td>50012</td><td>50011</td></tr>
+<tr><td>electrumx.radiant4people.com</td><td>50010</td><td>50012</td><td>50011</td></tr>
+</tbody>
+</table>
+
+<h3>Testnet</h3>
+
+<table>
+<thead><tr><th>Server</th><th>TCP</th><th>SSL</th></tr></thead>
+<tbody>
+<tr><td>electrumx-testnet.radiant4people.com</td><td>51010</td><td>51012</td></tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2 id="cli-commands">Common CLI Commands</h2>
+
+<h3>radiant-cli</h3>
+
+<pre><code># Blockchain
+getblockchaininfo                    # Network status
+getblock &lt;hash&gt;                      # Block details
+getblockhash &lt;height&gt;                # Hash at height
+getblockcount                        # Current height
+
+# Transactions
+getrawtransaction &lt;txid&gt; true        # TX details
+decoderawtransaction &lt;hex&gt;           # Decode raw TX
+sendrawtransaction &lt;hex&gt;             # Broadcast TX
+
+# Wallet
+getbalance                           # Total balance
+getnewaddress "label"                # New address
+listunspent                          # Available UTXOs
+sendtoaddress &lt;addr&gt; &lt;amount&gt;        # Send RXD
+
+# Mining
+getmininginfo                        # Mining stats
+getnetworkhashps                     # Network hashrate</code></pre>
+
+<h3>Docker</h3>
+
+<pre><code># Start node
+docker run -d --name radiant \
+  -p 7332:7332 -p 7333:7333 \
+  -v radiant-data:/root/.radiant \
+  radiant-core:latest
+
+# Check status
+docker exec radiant radiant-cli getblockchaininfo
+
+# View logs
+docker logs -f radiant
+
+# Stop
+docker stop radiant</code></pre>
+
+<hr>
+
+<h2 id="glyph-protocol-ids">Glyph Protocol IDs</h2>
+
+<table>
+<thead><tr><th>ID</th><th>Name</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>GLYPH_FT</td><td>Fungible Token</td></tr>
+<tr><td>2</td><td>GLYPH_NFT</td><td>Non-Fungible Token</td></tr>
+<tr><td>3</td><td>GLYPH_DAT</td><td>Data Storage</td></tr>
+<tr><td>4</td><td>GLYPH_DMINT</td><td>Decentralized Minting</td></tr>
+<tr><td>5</td><td>GLYPH_MUT</td><td>Mutable State</td></tr>
+<tr><td>6</td><td>GLYPH_BURN</td><td>Explicit Burn</td></tr>
+<tr><td>7</td><td>GLYPH_CONTAINER</td><td>Container/Collection</td></tr>
+<tr><td>8</td><td>GLYPH_ENCRYPTED</td><td>Encrypted Content</td></tr>
+<tr><td>9</td><td>GLYPH_TIMELOCK</td><td>Timelocked Reveal</td></tr>
+<tr><td>10</td><td>GLYPH_AUTHORITY</td><td>Issuer Authority</td></tr>
+<tr><td>11</td><td>GLYPH_WAVE</td><td>WAVE Naming</td></tr>
+</tbody>
+</table>
+
+<p><strong>Valid Combinations:</strong></p>
+<ul>
+<li><code>[1]</code> — Basic FT</li>
+<li><code>[2]</code> — Basic NFT</li>
+<li><code>[1, 4]</code> — Mineable FT</li>
+<li><code>[2, 5]</code> — Mutable NFT</li>
+<li><code>[2, 7]</code> — Collection container</li>
+<li><code>[2, 8]</code> — Encrypted NFT</li>
+</ul>
+
+<hr>
+
+<h2 id="radiant-opcodes">Radiant-Specific Opcodes</h2>
+
+<h3>Introspection (0xC0-0xCD)</h3>
+
+<table>
+<thead><tr><th>Opcode</th><th>Hex</th><th>Stack</th></tr></thead>
+<tbody>
+<tr><td>OP_INPUTINDEX</td><td>C0</td><td>→ index</td></tr>
+<tr><td>OP_TXVERSION</td><td>C2</td><td>→ version</td></tr>
+<tr><td>OP_TXINPUTCOUNT</td><td>C3</td><td>→ count</td></tr>
+<tr><td>OP_TXOUTPUTCOUNT</td><td>C4</td><td>→ count</td></tr>
+<tr><td>OP_UTXOVALUE</td><td>C6</td><td>index → value</td></tr>
+<tr><td>OP_UTXOBYTECODE</td><td>C7</td><td>index → script</td></tr>
+<tr><td>OP_OUTPUTVALUE</td><td>CC</td><td>index → value</td></tr>
+<tr><td>OP_OUTPUTBYTECODE</td><td>CD</td><td>index → script</td></tr>
+</tbody>
+</table>
+
+<h3>References (0xD0-0xED)</h3>
+
+<table>
+<thead><tr><th>Opcode</th><th>Hex</th><th>Stack</th></tr></thead>
+<tbody>
+<tr><td>OP_PUSHINPUTREF</td><td>D0</td><td>ref → ref</td></tr>
+<tr><td>OP_REQUIREINPUTREF</td><td>D1</td><td>ref →</td></tr>
+<tr><td>OP_PUSHINPUTREFSINGLETON</td><td>D8</td><td>ref → ref</td></tr>
+<tr><td>OP_REFVALUESUM_UTXOS</td><td>D4</td><td>ref → sum</td></tr>
+<tr><td>OP_REFVALUESUM_OUTPUTS</td><td>D5</td><td>ref → sum</td></tr>
+<tr><td>OP_REFOUTPUTCOUNT_UTXOS</td><td>D6</td><td>ref → count</td></tr>
+<tr><td>OP_REFOUTPUTCOUNT_OUTPUTS</td><td>D7</td><td>ref → count</td></tr>
+<tr><td>OP_PUSH_TX_STATE</td><td>ED</td><td>field → value</td></tr>
+</tbody>
+</table>
+
+<h3>Transaction State (OP_PUSH_TX_STATE fields)</h3>
+
+<table>
+<thead><tr><th>Field</th><th>RadiantScript</th><th>Returns</th></tr></thead>
+<tbody>
+<tr><td>0</td><td><code>tx.state.txId</code></td><td>Current txid (bytes32)</td></tr>
+<tr><td>1</td><td><code>tx.state.inputSum</code></td><td>Total input value (int)</td></tr>
+<tr><td>2</td><td><code>tx.state.outputSum</code></td><td>Total output value (int)</td></tr>
+</tbody>
+</table>
+
+<h3>State</h3>
+
+<table>
+<thead><tr><th>Opcode</th><th>Hex</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>OP_STATESEPARATOR</td><td>BD</td><td>Separates state from code</td></tr>
+</tbody>
+</table>
+
+<h3>V2 Hard Fork Opcodes (Activation: Block 410,000)</h3>
+
+<p>New and re-enabled opcodes introduced in Radiant Core 2.1, gated behind <code>SCRIPT_ENHANCED_REFERENCES</code>:</p>
+
+<table>
+<thead><tr><th>Opcode</th><th>Hex</th><th>Stack</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>OP_BLAKE3</td><td>EE</td><td>data → hash</td><td>Blake3 hash (32-byte output)</td></tr>
+<tr><td>OP_K12</td><td>EF</td><td>data → hash</td><td>KangarooTwelve hash (32-byte output)</td></tr>
+<tr><td>OP_LSHIFT</td><td>98</td><td>a b → (a &lt;&lt; b)</td><td>Bitwise left shift (re-enabled)</td></tr>
+<tr><td>OP_RSHIFT</td><td>99</td><td>a b → (a &gt;&gt; b)</td><td>Bitwise right shift (re-enabled)</td></tr>
+<tr><td>OP_2MUL</td><td>8D</td><td>a → (a * 2)</td><td>Multiply by 2</td></tr>
+<tr><td>OP_2DIV</td><td>8E</td><td>a → (a / 2)</td><td>Divide by 2 (truncation toward zero)</td></tr>
+</tbody>
+</table>
+
+<p><strong>Use cases:</strong></p>
+<ul>
+<li><strong>OP_BLAKE3 / OP_K12</strong>: On-chain PoW validation for Glyph v2 dMint tokens</li>
+<li><strong>OP_LSHIFT / OP_RSHIFT</strong>: On-chain ASERT-lite DAA computation via bit shifts</li>
+<li><strong>OP_2MUL / OP_2DIV</strong>: Numeric scaling for DAA and contract arithmetic</li>
+</ul>
+
+<hr>
+
+<h2 id="javascript-quick-start">JavaScript Quick Start</h2>
+
+<pre><code>// npm install @radiantblockchain/radiantjs
+
+const radiant = require('@radiantblockchain/radiantjs');
+
+// Generate key
+const key = new radiant.PrivateKey();
+console.log('Address:', key.toAddress().toString());
+console.log('WIF:', key.toWIF());
+
+// From seed phrase
+const mnemonic = radiant.Mnemonic.fromRandom();
+const hdKey = mnemonic.toHDPrivateKey();
+const derived = hdKey.deriveChild("m/44'/0'/0'/0/0");
+
+// Build transaction
+const tx = new radiant.Transaction()
+  .from(utxo)
+  .to(address, amount)
+  .change(changeAddress)
+  .fee(500)
+  .sign(privateKey);
+
+const txHex = tx.serialize();</code></pre>
+
+<hr>
+
+<h2 id="mining-quick-start">Mining Quick Start</h2>
+
+<h3>Pool Mining (NVIDIA)</h3>
+
+<pre><code>ccminer -a sha512256d \
+  -o stratum+tcp://stratum.vipor.net:5068 \
+  -u YOUR_WALLET.rig1</code></pre>
+
+<h3>Pool Mining (AMD)</h3>
+
+<pre><code>SRBMiner-MULTI --disable-cpu \
+  --algorithm sha512_256d_radiant \
+  --pool stratum+tcp://stratum.vipor.net:5068 \
+  --wallet YOUR_WALLET.rig1</code></pre>
+
+<hr>
+
+<h2 id="ai-integration">AI Integration (MCP Server)</h2>
+
+<pre><code>{
+  "mcpServers": {
+    "radiant": {
+      "command": "npx",
+      "args": ["radiant-mcp-server"],
+      "env": {
+        "ELECTRUMX_HOST": "electrumx.radiant4people.com",
+        "ELECTRUMX_PORT": "50012",
+        "ELECTRUMX_SSL": "true"
+      }
+    }
+  }
+}</code></pre>
+
+<table>
+<thead><tr><th>Feature</th><th>Count</th></tr></thead>
+<tbody>
+<tr><td>MCP Tools</td><td>56 (blockchain, glyph, dMint, WAVE, swap, utility, wallet, decode, AI primitives)</td></tr>
+<tr><td>MCP Resources</td><td>10 (6 static docs + 4 live data)</td></tr>
+<tr><td>REST Endpoints</td><td>~61 at <code>http://localhost:3080/api</code></td></tr>
+<tr><td>BIP39 Wallet</td><td>12-24 word mnemonics, BIP32 HD derivation</td></tr>
+<tr><td>Test Suites</td><td>225+ tests (smoke, primitives, agent, live, REST)</td></tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2 id="useful-links">Useful Links</h2>
+
+<h3>Official</h3>
+<ul>
+<li>Website: <a href="https://radiantblockchain.org">radiantblockchain.org</a></li>
+<li>Whitepaper: <a href="https://radiantblockchain.org/radiant.pdf">radiantblockchain.org/radiant.pdf</a></li>
+<li>GitHub: <a href="https://github.com/Radiant-Core">github.com/Radiant-Core</a></li>
+</ul>
+
+<h3>Explorers</h3>
+<ul>
+<li><a href="https://radiantexplorer.com">radiantexplorer.com</a></li>
+<li><a href="https://glyph-explorer.rxd-radiant.com">glyph-explorer.rxd-radiant.com</a></li>
+</ul>
+
+<h3>Community</h3>
+<ul>
+<li>Discord: <a href="https://discord.gg/radiantblockchain">discord.gg/radiantblockchain</a></li>
+<li>Telegram: <a href="https://t.me/RadiantBlockchain">t.me/RadiantBlockchain</a></li>
+<li>Twitter: <a href="https://x.com/RXD_Community">@RXD_Community</a></li>
+</ul>
+
+<h3>Emergency Contacts</h3>
+
+<table>
+<thead><tr><th>Issue</th><th>Channel</th></tr></thead>
+<tbody>
+<tr><td>Security vulnerability</td><td>info@radiantfoundation.org</td></tr>
+<tr><td>Technical support</td><td>Discord #support</td></tr>
+<tr><td>General questions</td><td>Telegram group</td></tr>
+</tbody>
+</table>
+
+<p><em>Keep this reference handy for quick lookups.</em></p>
+
+    </div>
+    <div class="doc-footer">
+        <span><a href="./">← All Docs</a></span>
+        <span>&copy; 2022–2026 Radiant Core Contributors</span>
+    </div>
+</div>
+</body>
+</html>

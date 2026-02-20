@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Integration Strategy — Radiant Core Docs</title>
+    <meta name="description" content="Radiant AI Integration Strategy: MCP server architecture, 56 tools, REST API, Agent SDK with BIP39 wallets, test coverage, and roadmap.">
+    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="stylesheet" href="docs.css">
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="container">
+        <a href="../" class="nav-brand"><img src="../radiant-logo-darkmode.jpg" alt="Radiant"> Radiant Core</a>
+        <button class="hamburger" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Menu">&#9776;</button>
+        <ul class="nav-links">
+            <li><a href="../#features">Features</a></li>
+            <li><a href="../#v2-upgrade">V2 Upgrade</a></li>
+            <li><a href="./" class="nav-active">Docs</a></li>
+            <li><a href="../#ecosystem">Ecosystem</a></li>
+            <li><a href="../#mining">Mining</a></li>
+            <li><a href="../explorer/">Explorer</a></li>
+            <li><a href="https://github.com/Radiant-Core" class="nav-cta">GitHub ↗</a></li>
+        </ul>
+    </div>
+</nav>
+
+<div class="doc-container">
+    <div class="breadcrumb"><a href="./">Docs</a> <span class="sep">/</span> <span>AI Integration Strategy</span></div>
+
+    <div class="doc-header">
+        <h1>Radiant AI Integration Strategy</h1>
+        <div class="doc-meta"><span>Version 2.0</span> <span>Last Updated: February 2026</span> <span>Status: Implementation Reference</span></div>
+    </div>
+
+    <nav class="doc-toc">
+        <h3>Contents</h3>
+        <ul>
+            <li><a href="#executive-summary">1. Executive Summary</a></li>
+            <li><a href="#architecture">2. Architecture Overview</a></li>
+            <li><a href="#mcp-tools">3. MCP Tools (56)</a></li>
+            <li><a href="#mcp-resources">4. MCP Resources (10)</a></li>
+            <li><a href="#rest-api">5. REST API (~61 endpoints)</a></li>
+            <li><a href="#agent-sdk">6. Agent SDK (BIP39/BIP32 Wallet)</a></li>
+            <li><a href="#ai-primitives">7. AI-Native Primitives</a></li>
+            <li><a href="#knowledge-base">8. Knowledge Base</a></li>
+            <li><a href="#setup">9. Setup &amp; Configuration</a></li>
+            <li><a href="#test-coverage">10. Test Coverage</a></li>
+            <li><a href="#future-work">11. Future Work</a></li>
+        </ul>
+    </nav>
+
+    <div class="doc-content">
+
+<h2 id="executive-summary">1. Executive Summary</h2>
+
+<p>The <strong>radiant-mcp-server</strong> package makes the Radiant blockchain natively accessible to AI coding assistants (Windsurf Cascade, Claude Desktop, Cursor) and any HTTP client via a comprehensive REST API. It was built in 6 implementation sessions across February 2026.</p>
+
+<h3>Key Metrics</h3>
+<table>
+<thead><tr><th>Metric</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td><strong>MCP Tools</strong></td><td>56 across 9 categories</td></tr>
+<tr><td><strong>MCP Resources</strong></td><td>10 (6 static docs + 4 live data feeds)</td></tr>
+<tr><td><strong>REST Endpoints</strong></td><td>~61</td></tr>
+<tr><td><strong>Test Suites</strong></td><td>5 (225+ tests)</td></tr>
+<tr><td><strong>Agent SDK</strong></td><td>BIP39/BIP32 HD wallet with pure Node.js crypto</td></tr>
+<tr><td><strong>AI Primitives</strong></td><td>5 smart contracts for agent identity, inference proofs, micropayments, data marketplace, reputation</td></tr>
+</tbody>
+</table>
+
+<p>Repository: <a href="https://github.com/Radiant-Core/radiant-mcp-server">github.com/Radiant-Core/radiant-mcp-server</a></p>
+
+<hr>
+
+<h2 id="architecture">2. Architecture Overview</h2>
+
+<pre class="diagram"><code>┌─────────────────────────────────────────────────────────────┐
+│                    AI CLIENTS                                │
+│  Windsurf Cascade │ Claude Desktop │ Cursor │ HTTP clients   │
+└────────┬──────────┴────────┬───────┴────────┴────────┬──────┘
+         │ MCP (stdio)       │ MCP (SSE)               │ REST
+┌────────▼──────────────────▼──────────────────────────▼──────┐
+│                  radiant-mcp-server                          │
+│                                                              │
+│  ┌──────────┐  ┌──────────┐  ┌───────────┐  ┌───────────┐  │
+│  │ 56 Tools │  │10 Resrces│  │ REST API  │  │ Agent SDK │  │
+│  └────┬─────┘  └────┬─────┘  └─────┬─────┘  └─────┬─────┘  │
+│       └──────────────┴──────────────┴──────────────┘        │
+│                         ▼                                    │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │              ElectrumX Client (WSS)                   │   │
+│  └──────────────────────┬───────────────────────────────┘   │
+└─────────────────────────┼───────────────────────────────────┘
+                          ▼
+┌─────────────────────────────────────────────────────────────┐
+│              ElectrumX Server → Radiant Core Node            │
+└─────────────────────────────────────────────────────────────┘</code></pre>
+
+<hr>
+
+<h2 id="mcp-tools">3. MCP Tools (56)</h2>
+
+<table>
+<thead><tr><th>Category</th><th>Count</th><th>Examples</th></tr></thead>
+<tbody>
+<tr><td><strong>Blockchain</strong></td><td>8</td><td>Chain info, balance, UTXOs, history, broadcast, mempool, block, headers</td></tr>
+<tr><td><strong>Glyph</strong></td><td>9</td><td>Token info, search, metadata, history, types, holders, popular</td></tr>
+<tr><td><strong>dMint</strong></td><td>4</td><td>Contracts, algorithms, profitability, status</td></tr>
+<tr><td><strong>WAVE</strong></td><td>5</td><td>Resolve names, availability, subdomains, records, reverse lookup</td></tr>
+<tr><td><strong>Swap</strong></td><td>2</td><td>Open orders, trade history</td></tr>
+<tr><td><strong>Utility</strong></td><td>3</td><td>Protocol info, address validation, health check</td></tr>
+<tr><td><strong>Wallet</strong></td><td>3</td><td>BIP39 create/restore, tx decode</td></tr>
+<tr><td><strong>Script</strong></td><td>2</td><td>Decode script, compile script</td></tr>
+<tr><td><strong>AI Primitives</strong></td><td>9</td><td>Inference proofs, agent identity, micropayment channels, data marketplace</td></tr>
+<tr><td><strong>Agent Enhancement</strong></td><td>7</td><td>Build tx, estimate fee, send batch, watch address, derive address, burn token, get token UTXOs</td></tr>
+<tr><td><strong>Token Operations</strong></td><td>4</td><td>Send RXD, create FT, create NFT, transfer token</td></tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2 id="mcp-resources">4. MCP Resources (10)</h2>
+
+<h3>Static Documentation (6)</h3>
+<table>
+<thead><tr><th>URI</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>radiant://knowledge-base</code></td><td>Comprehensive Radiant technical knowledge base (701 lines)</td></tr>
+<tr><td><code>radiant://opcodes</code></td><td>Full opcode reference including V2 opcodes</td></tr>
+<tr><td><code>radiant://glyph-protocol</code></td><td>Glyph v2 token standard reference</td></tr>
+<tr><td><code>radiant://electrumx-api</code></td><td>ElectrumX JSON-RPC API documentation</td></tr>
+<tr><td><code>radiant://wave-protocol</code></td><td>WAVE naming system specification</td></tr>
+<tr><td><code>radiant://ai-contracts</code></td><td>AI primitive contract documentation</td></tr>
+</tbody>
+</table>
+
+<h3>Live Data Feeds (4)</h3>
+<table>
+<thead><tr><th>URI</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>radiant://chain/status</code></td><td>Current chain height, hashrate, difficulty</td></tr>
+<tr><td><code>radiant://chain/mempool</code></td><td>Mempool size and fee estimates</td></tr>
+<tr><td><code>radiant://tokens/popular</code></td><td>Top fungible and non-fungible tokens</td></tr>
+<tr><td><code>radiant://network/peers</code></td><td>Connected ElectrumX peer count</td></tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2 id="rest-api">5. REST API (~61 endpoints)</h2>
+
+<p>All tools are also exposed as HTTP endpoints at <code>http://localhost:3080/api</code>. Full OpenAPI 3.1 specification available at <code>docs/openapi.yaml</code>.</p>
+
+<h3>Key Endpoints</h3>
+<pre><code># Blockchain
+GET  /api/chain
+GET  /api/address/:address/balance
+GET  /api/address/:address/utxos
+GET  /api/address/:address/history
+POST /api/tx/broadcast
+GET  /api/block/:hashOrHeight
+
+# Glyph Tokens
+GET  /api/token/:ref/metadata
+GET  /api/token/:ref/history
+GET  /api/tokens/search?q=...
+GET  /api/tokens/popular
+
+# Agent Enhancement
+POST /api/tx/build
+GET  /api/tx/estimate-fee?inputs=N&amp;outputs=N
+POST /api/tx/send-batch
+POST /api/address/:address/watch
+POST /api/wallet/derive
+POST /api/token/burn
+GET  /api/address/:address/token-utxos
+
+# Wallet
+POST /api/wallet/create
+POST /api/wallet/restore
+POST /api/script/decode
+POST /api/script/compile
+
+# Swagger UI
+GET  /api/docs/swagger
+GET  /api/docs/openapi.json</code></pre>
+
+<h3>Starting the REST Server</h3>
+<pre><code>ELECTRUMX_HOST=electrumx.radiant4people.com \
+ELECTRUMX_PORT=50012 \
+ELECTRUMX_SSL=true \
+node dist/rest.js</code></pre>
+
+<hr>
+
+<h2 id="agent-sdk">6. Agent SDK (BIP39/BIP32 Wallet)</h2>
+
+<p>The package includes a full HD wallet implementation using only Node.js built-in <code>crypto</code> module — no external dependencies.</p>
+
+<pre><code>import { AgentWallet } from './wallet';
+
+// Generate with BIP39 mnemonic (12-24 words)
+const { wallet, mnemonic } = AgentWallet.generateWithMnemonic('mainnet', 12);
+console.log(wallet.address);   // Base58check P2PKH
+console.log(mnemonic);         // 12 recovery words
+
+// Restore from mnemonic
+const restored = AgentWallet.fromMnemonic(mnemonic, 'mainnet');
+
+// Derive sub-wallets (different paths = isolated wallets)
+const subWallet = AgentWallet.fromMnemonic(mnemonic, 'mainnet', '', "m/44'/0'/1'/0/0");
+
+// Sign a transaction
+const signature = wallet.sign(txHash);</code></pre>
+
+<h3>Implementation Details</h3>
+<table>
+<thead><tr><th>Feature</th><th>Implementation</th></tr></thead>
+<tbody>
+<tr><td>BIP39 Mnemonic</td><td>2048-word English wordlist, PBKDF2-HMAC-SHA512 (2048 rounds)</td></tr>
+<tr><td>BIP32 HD Keys</td><td>HMAC-SHA512 chain code derivation, hardened child keys</td></tr>
+<tr><td>Key Format</td><td>secp256k1 compressed public keys (33 bytes)</td></tr>
+<tr><td>Address Format</td><td>Base58check P2PKH (prefix 0x00 mainnet, 0x6f testnet)</td></tr>
+<tr><td>Signing</td><td>ECDSA with secp256k1 via Node.js crypto</td></tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2 id="ai-primitives">7. AI-Native Primitives</h2>
+
+<p>Five RadiantScript smart contracts provide blockchain-native AI capabilities:</p>
+
+<table>
+<thead><tr><th>Contract</th><th>Purpose</th><th>File</th></tr></thead>
+<tbody>
+<tr><td><strong>AgentIdentity</strong></td><td>On-chain AI agent identity registration with model hash verification</td><td><code>contracts/AgentIdentity.rxd</code></td></tr>
+<tr><td><strong>InferenceProof</strong></td><td>Timestamped proof that an AI model produced a specific output</td><td><code>contracts/InferenceProof.rxd</code></td></tr>
+<tr><td><strong>MicropaymentChannel</strong></td><td>Payment channels for per-inference billing between agents</td><td><code>contracts/MicropaymentChannel.rxd</code></td></tr>
+<tr><td><strong>DataMarketplace</strong></td><td>Buy/sell datasets with hash-locked delivery and escrow</td><td><code>contracts/DataMarketplace.rxd</code></td></tr>
+<tr><td><strong>ReputationToken</strong></td><td>Soulbound reputation NFTs for AI agents based on performance</td><td><code>contracts/ReputationToken.rxd</code></td></tr>
+</tbody>
+</table>
+
+<h3>Example: Inference Proof</h3>
+<pre><code>// An AI agent can prove it produced a specific output
+const proof = await mcpClient.call('radiant_create_inference_proof', {
+  model_hash: 'sha256_of_model_weights',
+  input_hash: 'sha256_of_prompt',
+  output_hash: 'sha256_of_response',
+  timestamp: Date.now()
+});
+// Returns: { txid, proofRef, onChainTimestamp }</code></pre>
+
+<hr>
+
+<h2 id="knowledge-base">8. Knowledge Base</h2>
+
+<p>The <code>radiant://knowledge-base</code> resource provides a comprehensive 701-line technical reference covering 13 sections:</p>
+
+<ol>
+<li>Network Overview &amp; Parameters</li>
+<li>UTXO Model &amp; Transaction Structure</li>
+<li>Script System &amp; Opcodes</li>
+<li>Reference System (Induction Proofs)</li>
+<li>Glyph Token Protocol</li>
+<li>WAVE Naming System</li>
+<li>ElectrumX API Reference</li>
+<li>radiantjs SDK Usage</li>
+<li>Mining &amp; Consensus</li>
+<li>AI Integration Patterns</li>
+<li>Smart Contract Examples</li>
+<li>V2 Hard Fork Opcodes</li>
+<li>Common Patterns &amp; Best Practices</li>
+</ol>
+
+<p>This knowledge base is injected as context when an AI agent connects, giving it comprehensive understanding of the Radiant blockchain without requiring additional documentation lookups.</p>
+
+<hr>
+
+<h2 id="setup">9. Setup &amp; Configuration</h2>
+
+<h3>MCP Configuration (stdio transport)</h3>
+<pre><code>{
+  "mcpServers": {
+    "radiant": {
+      "command": "npx",
+      "args": ["radiant-mcp-server"],
+      "env": {
+        "ELECTRUMX_HOST": "electrumx.radiant4people.com",
+        "ELECTRUMX_PORT": "50012",
+        "ELECTRUMX_SSL": "true"
+      }
+    }
+  }
+}</code></pre>
+
+<h3>SSE Transport</h3>
+<pre><code># Start SSE server for web-based AI clients
+npx radiant-mcp-sse
+
+# Connect via:
+# GET  http://localhost:3080/sse       (event stream)
+# POST http://localhost:3080/message   (send messages)</code></pre>
+
+<h3>Environment Variables</h3>
+<table>
+<thead><tr><th>Variable</th><th>Default</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>ELECTRUMX_HOST</code></td><td>electrumx.radiant4people.com</td><td>ElectrumX server hostname</td></tr>
+<tr><td><code>ELECTRUMX_PORT</code></td><td>50012</td><td>ElectrumX server port</td></tr>
+<tr><td><code>ELECTRUMX_SSL</code></td><td>true</td><td>Use SSL/TLS connection</td></tr>
+<tr><td><code>REST_PORT</code></td><td>3080</td><td>REST API listen port</td></tr>
+<tr><td><code>AGENT_MNEMONIC</code></td><td>(none)</td><td>BIP39 mnemonic for agent wallet</td></tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2 id="test-coverage">10. Test Coverage</h2>
+
+<table>
+<thead><tr><th>Suite</th><th>Tests</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>Smoke</td><td>66</td><td>All 56 tools + 10 resources register correctly</td></tr>
+<tr><td>Primitives</td><td>47</td><td>Agent wallet, BIP39, address derivation, signing</td></tr>
+<tr><td>Compiler</td><td>33</td><td>RadiantScript compilation integration</td></tr>
+<tr><td>Tx-Builder</td><td>73</td><td>Transaction building, fee estimation, batch send, burn, token UTXOs</td></tr>
+<tr><td>Live</td><td>6+</td><td>Real ElectrumX connection tests (requires network)</td></tr>
+</tbody>
+</table>
+
+<pre><code># Run all tests
+npm test
+
+# Run specific suite
+npm test -- --grep "smoke"
+npm test -- --grep "primitives"
+npm test -- --grep "tx-builder"</code></pre>
+
+<hr>
+
+<h2 id="future-work">11. Future Work</h2>
+
+<h3>Deferred Items</h3>
+<table>
+<thead><tr><th>Item</th><th>Status</th><th>Blocker</th></tr></thead>
+<tbody>
+<tr><td>Auto-generated Python/Go/Rust clients</td><td>Deferred</td><td>OpenAPI spec ready, generation is mechanical</td></tr>
+<tr><td>npm publish</td><td>Deferred</td><td>Needs <code>npm publish --access public</code></td></tr>
+<tr><td>WebSocket subscriptions in REST</td><td>Planned</td><td>None</td></tr>
+<tr><td>Token transfer with UTXO management</td><td>Implemented</td><td>—</td></tr>
+</tbody>
+</table>
+
+<h3>Enhancement Opportunities</h3>
+<ul>
+<li>Multi-agent coordination via on-chain messaging</li>
+<li>Streaming inference proof verification</li>
+<li>Cross-chain bridge tools</li>
+<li>Advanced UTXO selection strategies</li>
+<li>GPU-accelerated hash verification for AI agents</li>
+</ul>
+
+<hr>
+
+<h2 id="version-history">Version History</h2>
+
+<table>
+<thead><tr><th>Version</th><th>Tools</th><th>Key Additions</th></tr></thead>
+<tbody>
+<tr><td>1.0.0</td><td>43</td><td>Initial release: blockchain, glyph, dMint, WAVE, swap, utility, wallet, AI primitives</td></tr>
+<tr><td>1.1.0</td><td>44</td><td>decode_script, tokens/popular resource, Swagger UI, SSE transport</td></tr>
+<tr><td>1.2.0</td><td>45</td><td>compile_script (RadiantScript integration)</td></tr>
+<tr><td>1.3.0</td><td>49</td><td>send_rxd, create_ft, create_nft, transfer_token</td></tr>
+<tr><td>1.4.0</td><td>56</td><td>7 agent enhancement tools: build_tx, estimate_fee, send_batch, watch_address, derive_address, burn_token, get_token_utxos</td></tr>
+</tbody>
+</table>
+
+<p><em>For the full implementation details, see the <a href="https://github.com/Radiant-Core/radiant-mcp-server">radiant-mcp-server repository</a>.</em></p>
+
+    </div>
+    <div class="doc-footer">
+        <span><a href="./">← All Docs</a></span>
+        <span>&copy; 2022–2026 Radiant Core Contributors</span>
+    </div>
+</div>
+</body>
+</html>

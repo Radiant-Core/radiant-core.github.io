@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Developer Guide — Radiant Core Docs</title>
+    <meta name="description" content="Radiant developer guide: radiantjs SDK, transactions, Glyph tokens, RadiantScript smart contracts, ElectrumX, node RPC, V2 opcodes, and AI integration.">
+    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="stylesheet" href="docs.css">
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="container">
+        <a href="../" class="nav-brand"><img src="../radiant-logo-darkmode.jpg" alt="Radiant"> Radiant Core</a>
+        <button class="hamburger" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Menu">&#9776;</button>
+        <ul class="nav-links">
+            <li><a href="../#features">Features</a></li>
+            <li><a href="../#v2-upgrade">V2 Upgrade</a></li>
+            <li><a href="./" class="nav-active">Docs</a></li>
+            <li><a href="../#ecosystem">Ecosystem</a></li>
+            <li><a href="../#mining">Mining</a></li>
+            <li><a href="../explorer/">Explorer</a></li>
+            <li><a href="https://github.com/Radiant-Core" class="nav-cta">GitHub ↗</a></li>
+        </ul>
+    </div>
+</nav>
+
+<div class="doc-container">
+    <div class="breadcrumb"><a href="./">Docs</a> <span class="sep">/</span> <span>Developer Guide</span></div>
+
+    <div class="doc-header">
+        <h1>Radiant Developer Guide</h1>
+        <div class="doc-meta"><span>Version 1.2</span> <span>Last Updated: February 2026</span></div>
+    </div>
+
+    <nav class="doc-toc">
+        <h3>Contents</h3>
+        <ul>
+            <li><a href="#getting-started">1. Getting Started</a></li>
+            <li><a href="#dev-environment">2. Development Environment</a></li>
+            <li><a href="#radiantjs">3. radiantjs SDK</a></li>
+            <li><a href="#transactions">4. Working with Transactions</a></li>
+            <li><a href="#glyph-tokens">5. Glyph Tokens</a></li>
+            <li><a href="#radiantscript">6. Smart Contracts with RadiantScript</a></li>
+            <li><a href="#rxdeb">7. Debugging with rxdeb</a></li>
+            <li><a href="#electrumx">8. ElectrumX Integration</a></li>
+            <li><a href="#running-node">9. Running a Node</a></li>
+            <li><a href="#v2-hard-fork">10. V2 Hard Fork (Radiant Core 2.1)</a></li>
+            <li><a href="#ai-integration">11. AI Integration (MCP Server)</a></li>
+            <li><a href="#best-practices">12. Best Practices</a></li>
+            <li><a href="#resources">13. Resources</a></li>
+        </ul>
+    </nav>
+
+    <div class="doc-content">
+
+<h2 id="getting-started">1. Getting Started</h2>
+
+<h3>Prerequisites</h3>
+<ul>
+<li><strong>Node.js</strong> 18+ (for JavaScript development)</li>
+<li><strong>Git</strong> for version control</li>
+<li><strong>Code editor</strong> (VS Code recommended)</li>
+<li><strong>Basic understanding</strong> of UTXO model and Bitcoin scripting</li>
+</ul>
+
+<h3>Quick Start</h3>
+<pre><code># Create new project
+mkdir my-radiant-app
+cd my-radiant-app
+npm init -y
+
+# Install core dependencies
+npm install @radiantblockchain/radiantjs
+npm install @radiantblockchain/constants
+
+# Optional: ElectrumX client
+npm install ws-electrumx-client</code></pre>
+
+<h3>Hello World: Send RXD</h3>
+<pre><code>const radiant = require('@radiantblockchain/radiantjs');
+
+// Create a new private key
+const privateKey = new radiant.PrivateKey();
+console.log('Address:', privateKey.toAddress().toString());
+console.log('WIF:', privateKey.toWIF());
+
+// To send RXD, you'll need:
+// 1. Fund the address
+// 2. Get UTXOs from ElectrumX
+// 3. Build and sign transaction
+// 4. Broadcast to network</code></pre>
+
+<hr>
+
+<h2 id="dev-environment">2. Development Environment</h2>
+
+<h3>Recommended Setup</h3>
+<pre><code># Install global tools
+npm install -g typescript ts-node
+
+# Project structure
+my-radiant-app/
+├── src/
+│   ├── index.ts
+│   ├── wallet.ts
+│   ├── transactions.ts
+│   └── electrum.ts
+├── tests/
+├── package.json
+└── tsconfig.json</code></pre>
+
+<h3>TypeScript Configuration</h3>
+<pre><code>{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "strict": true,
+    "esModuleInterop": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "declaration": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules"]
+}</code></pre>
+
+<h3>Environment Variables</h3>
+<pre><code># .env
+ELECTRUMX_HOST=electrumx.radiantexplorer.com
+ELECTRUMX_PORT=50012
+ELECTRUMX_PROTOCOL=ssl
+NETWORK=mainnet</code></pre>
+
+<hr>
+
+<h2 id="radiantjs">3. radiantjs SDK</h2>
+
+<h3>Core Modules</h3>
+<pre><code>const radiant = require('@radiantblockchain/radiantjs');
+
+const {
+  PrivateKey,      // Key management
+  PublicKey,       // Public key operations
+  Address,         // Address handling
+  Transaction,     // Transaction building
+  Script,          // Script construction
+  Opcode,          // Opcode constants
+  crypto,          // Cryptographic functions
+  encoding,        // Data encoding utilities
+  Mnemonic,        // BIP39 seed phrases
+  HDPrivateKey,    // Hierarchical deterministic keys
+  Block,           // Block parsing
+  Message,         // Message signing
+  ECIES            // Encryption
+} = radiant;</code></pre>
+
+<h3>Key Management</h3>
+<pre><code>// Generate new key
+const privateKey = new radiant.PrivateKey();
+
+// From WIF
+const keyFromWIF = radiant.PrivateKey.fromWIF('your_wif_here');
+
+// From seed phrase (BIP39)
+const mnemonic = radiant.Mnemonic.fromRandom();
+console.log('Seed phrase:', mnemonic.toString());
+
+const hdKey = mnemonic.toHDPrivateKey();
+const derived = hdKey.deriveChild("m/44'/0'/0'/0/0");
+const address = derived.publicKey.toAddress();</code></pre>
+
+<h3>Address Operations</h3>
+<pre><code>// Create address from public key
+const address = privateKey.toAddress();
+console.log('Address:', address.toString());
+
+// Validate address
+const isValid = radiant.Address.isValid('1...');
+
+// Parse address
+const parsed = new radiant.Address('1A1zP1...');
+console.log('Type:', parsed.type); // 'pubkeyhash' or 'scripthash'</code></pre>
+
+<h3>Glyph v2 Module</h3>
+<pre><code>const { Glyph } = require('@radiantblockchain/radiantjs');
+
+// Constants
+console.log(Glyph.GLYPH_MAGIC);              // 'gly'
+console.log(Glyph.GlyphVersion.V2);          // 0x02
+console.log(Glyph.GlyphProtocol.GLYPH_NFT);  // 2
+
+// Encode metadata
+const metadata = {
+  v: 2, type: 'nft', p: [2],
+  name: 'My NFT', desc: 'A unique token'
+};
+const encoded = Glyph.encodeMetadata(metadata);
+
+// Validate protocols
+const validation = Glyph.validateProtocols([1, 4]); // FT + dMint
+console.log(validation.valid); // true</code></pre>
+
+<hr>
+
+<h2 id="transactions">4. Working with Transactions</h2>
+
+<h3>UTXO Model Basics</h3>
+<pre class="diagram"><code>UTXO (Unspent Transaction Output):
+┌─────────────────────────────────────┐
+│ txid: abc123...                     │
+│ vout: 0                             │
+│ value: 100000000 (1 RXD in photons) │
+│ script: &lt;locking script&gt;           │
+└─────────────────────────────────────┘
+
+To spend a UTXO:
+1. Reference it by txid:vout
+2. Provide unlocking script (signature)
+3. Create new outputs</code></pre>
+
+<h3>Building Transactions</h3>
+<pre><code>const tx = new radiant.Transaction()
+  .from({
+    txId: 'previous_txid_here',
+    outputIndex: 0,
+    script: 'previous_locking_script',
+    satoshis: 100000000
+  })
+  .to('recipient_address', 50000000)  // 0.5 RXD
+  .change('change_address')
+  .fee(1000)  // Fee in photons
+  .sign(privateKey);
+
+const txHex = tx.serialize();</code></pre>
+
+<h3>Fee Estimation</h3>
+<pre><code>// Radiant uses photons (1 RXD = 100,000,000 photons)
+const FEE_RATE = 0.5; // photons per byte
+
+function estimateFee(inputCount, outputCount) {
+  const size = inputCount * 148 + outputCount * 34 + 10;
+  return Math.ceil(size * FEE_RATE);
+}
+
+const fee = estimateFee(2, 2);  // ~165 photons</code></pre>
+
+<h3>Multi-Signature</h3>
+<pre><code>// 2-of-3 multisig
+const redeemScript = radiant.Script.buildMultisigOut([
+  pubKey1, pubKey2, pubKey3
+], 2);
+
+tx.from({
+  txId: 'txid', outputIndex: 0,
+  script: redeemScript.toScriptHashOut(),
+  satoshis: amount
+}, [pubKey1, pubKey2, pubKey3], 2);
+
+tx.sign([privateKey1, privateKey2]);</code></pre>
+
+<hr>
+
+<h2 id="glyph-tokens">5. Glyph Tokens</h2>
+
+<h3>Token Types</h3>
+<table>
+<thead><tr><th>Type</th><th>Protocol ID</th><th>Reference Type</th></tr></thead>
+<tbody>
+<tr><td>Fungible (FT)</td><td>1</td><td>OP_PUSHINPUTREF</td></tr>
+<tr><td>Non-Fungible (NFT)</td><td>2</td><td>OP_PUSHINPUTREFSINGLETON</td></tr>
+<tr><td>Data (DAT)</td><td>3</td><td>None</td></tr>
+</tbody>
+</table>
+
+<h3>Creating an NFT Script</h3>
+<pre><code>function createNFTScript(tokenRef, ownerPkh) {
+  return new Script()
+    .add(Buffer.from(tokenRef, 'hex'))
+    .add(Opcode.OP_PUSHINPUTREFSINGLETON)
+    .add(Opcode.OP_DROP)
+    .add(Opcode.OP_DUP)
+    .add(Opcode.OP_HASH160)
+    .add(Buffer.from(ownerPkh, 'hex'))
+    .add(Opcode.OP_EQUALVERIFY)
+    .add(Opcode.OP_CHECKSIG);
+}</code></pre>
+
+<h3>Glyph Metadata (CBOR)</h3>
+<pre><code>const CBOR = require('cbor');
+
+const metadata = {
+  v: 2, type: 'nft', p: [2],
+  name: 'My Artwork',
+  desc: 'A beautiful digital creation',
+  content: {
+    primary: {
+      path: 'artwork.png', mime: 'image/png',
+      size: 102400,
+      hash: { algo: 'sha256', hex: '...' },
+      storage: 'inline'
+    }
+  }
+};
+
+const encodedMetadata = CBOR.encode(metadata);
+const commitHash = crypto.createHash('sha256').update(encodedMetadata).digest();</code></pre>
+
+<h3>Commit-Reveal Pattern</h3>
+<pre><code>// Phase 1: Commit Transaction
+function buildCommitTx(privateKey, utxo, commitHash) {
+  const commitScript = new Script()
+    .add(Opcode.OP_RETURN)
+    .add(Buffer.from('gly'))       // Magic bytes
+    .add(Buffer.from([0x02]))      // Version 2
+    .add(Buffer.from([0x00]))      // Flags
+    .add(commitHash);              // 32-byte hash
+
+  return new Transaction()
+    .from(utxo)
+    .addOutput(new Transaction.Output({
+      script: commitScript, satoshis: 0
+    }))
+    .addOutput(new Transaction.Output({
+      script: Script.buildPublicKeyHashOut(privateKey.toAddress()),
+      satoshis: utxo.satoshis - 1000
+    }))
+    .sign(privateKey);
+}
+
+// Phase 2: Reveal Transaction (creates the token)</code></pre>
+
+<hr>
+
+<h2 id="radiantscript">6. Smart Contracts with RadiantScript</h2>
+
+<h3>Overview</h3>
+<p><strong>RadiantScript</strong> is a high-level language for writing Radiant smart contracts, compiled to Bitcoin Script with Radiant opcodes.</p>
+
+<h3>Installation</h3>
+<pre><code>git clone https://github.com/Radiant-Core/RadiantScript
+cd RadiantScript
+yarn install
+
+# Compile contract
+npx rxdc MyContract.rxd -o MyContract.json</code></pre>
+
+<h3>Basic Contract</h3>
+<pre><code>// SimpleToken.rxd
+contract SimpleToken(bytes36 REF, bytes20 PKH)
+function (sig s, pubkey pk) {
+    require(hash160(pk) == PKH);
+    require(checkSig(s, pk));
+
+    stateSeparator;
+
+    bytes36 ref = pushInputRef(REF);
+    bytes32 csh = hash256(tx.inputs[this.activeInputIndex].codeScript);
+    require(tx.inputs.codeScriptValueSum(csh) >=
+            tx.outputs.codeScriptValueSum(csh));
+}</code></pre>
+
+<h3>Introspection Features</h3>
+<pre><code>// Transaction introspection
+int inputCount = tx.inputCount;
+int outputCount = tx.outputCount;
+int myIndex = this.activeInputIndex;
+int myValue = tx.inputs[myIndex].value;
+
+// Reference tracking
+int refCount = tx.outputs.refOutputCount(ref);
+int refSum = tx.outputs.refValueSum(ref);
+
+// Transaction state (OP_PUSH_TX_STATE)
+bytes32 myTxId = tx.state.txId;       // Current transaction's txid
+int totalIn = tx.state.inputSum;       // Total input value
+int totalOut = tx.state.outputSum;     // Total output value</code></pre>
+
+<h3>Induction Proof Patterns</h3>
+<p>Radiant supports two methods for mathematical induction proofs:</p>
+<ul>
+<li><strong>Method 1: Reference-Based</strong> — <code>pushInputRef</code> creates an unbroken provenance chain from genesis. Primary method for all Glyph tokens.</li>
+<li><strong>Method 2: TxId v3 Preimage</strong> — When <code>nVersion == 3</code>, the txid is computed from a fixed 112-byte preimage, enabling ancestor verification.</li>
+</ul>
+
+<pre><code>// Code-continuity induction: verify parent had same contract code
+bytes myCodeScript = tx.inputs[this.activeInputIndex].codeScript;
+bytes32 myCodeHash = hash256(myCodeScript);
+require(tx.outputs.codeScriptCount(myCodeHash) >= 1);
+
+// Fee-bounded transfer using tx.state
+int fee = tx.state.inputSum - tx.state.outputSum;
+require(fee >= 0);
+require(fee &lt;= maxFee);</code></pre>
+
+<h3>NFT with Royalties</h3>
+<pre><code>contract NFT(
+    bytes36 REF, bytes20 OWNER_PKH,
+    bytes20 CREATOR_PKH, int ROYALTY_BPS
+)
+function (sig s, pubkey pk) {
+    require(hash160(pk) == OWNER_PKH);
+    require(checkSig(s, pk));
+
+    stateSeparator;
+    bytes36 ref = pushInputRefSingleton(REF);
+
+    if (tx.outputs[1].value > 0) {
+        int salePrice = tx.outputs[1].value;
+        int royalty = salePrice * ROYALTY_BPS / 10000;
+        require(tx.outputs[2].value >= royalty);
+        bytes20 royaltyRecipient = hash160(tx.outputs[2].lockingBytecode[3:23]);
+        require(royaltyRecipient == CREATOR_PKH);
+    }
+}</code></pre>
+
+<h3>Compile and Deploy</h3>
+<pre><code># Compile with debug info
+npx rxdc NFT.rxd -o NFT.json --debug
+
+# Use in JavaScript
+const artifact = require('./NFT.json');
+const contract = new Contract(artifact, [
+  tokenRef, ownerPkh, creatorPkh, 500  // 5% royalty
+]);
+const lockingScript = contract.lockingScript;</code></pre>
+
+<hr>
+
+<h2 id="rxdeb">7. Debugging with rxdeb</h2>
+
+<h3>Installation</h3>
+<pre><code>git clone --recursive https://github.com/Radiant-Core/rxdeb
+cd rxdeb
+./autogen.sh
+./configure --enable-rxd
+make
+sudo make install</code></pre>
+
+<h3>Basic Usage</h3>
+<pre><code># Debug a simple script
+rxdeb '[OP_1 OP_2 OP_ADD OP_3 OP_EQUAL]'
+
+# Debug with transaction context
+rxdeb --tx=&lt;spending_tx_hex&gt; --txin=&lt;input_tx_hex&gt;
+
+# Debug RadiantScript artifact
+rxdeb --artifact=MyContract.json --function=transfer --args='["&lt;sig&gt;", "&lt;pk&gt;"]'</code></pre>
+
+<h3>REPL Commands</h3>
+<table>
+<thead><tr><th>Command</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>step</code> / <code>s</code></td><td>Execute one instruction</td></tr>
+<tr><td><code>continue</code> / <code>c</code></td><td>Run to completion</td></tr>
+<tr><td><code>rewind</code> / <code>r</code></td><td>Go back one step</td></tr>
+<tr><td><code>stack</code></td><td>Show main stack</td></tr>
+<tr><td><code>altstack</code></td><td>Show alt stack</td></tr>
+<tr><td><code>print</code></td><td>Show script with position</td></tr>
+<tr><td><code>source</code></td><td>Show RadiantScript source</td></tr>
+<tr><td><code>refs</code></td><td>Show reference state</td></tr>
+<tr><td><code>context</code></td><td>Show transaction context</td></tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2 id="electrumx">8. ElectrumX Integration</h2>
+
+<h3>WebSocket Connection</h3>
+<pre><code>class ElectrumClient {
+  constructor(host, port) {
+    this.url = `wss://${host}:${port}`;
+    this.requestId = 0;
+    this.pending = new Map();
+  }
+
+  async connect() {
+    return new Promise((resolve, reject) => {
+      this.ws = new WebSocket(this.url);
+      this.ws.on('open', () => resolve());
+      this.ws.on('error', reject);
+      this.ws.on('message', (data) => this.handleMessage(data));
+    });
+  }
+
+  async request(method, params = []) {
+    const id = ++this.requestId;
+    return new Promise((resolve, reject) => {
+      this.pending.set(id, { resolve, reject });
+      this.ws.send(JSON.stringify({ id, method, params }));
+    });
+  }
+}</code></pre>
+
+<h3>Common API Methods</h3>
+<pre><code>// Get server version
+await client.request('server.version', ['myapp', '1.4']);
+
+// Get address balance
+await client.request('blockchain.scripthash.get_balance', [scriptHash]);
+
+// Get address UTXOs
+await client.request('blockchain.scripthash.listunspent', [scriptHash]);
+
+// Get transaction
+await client.request('blockchain.transaction.get', [txid, true]);
+
+// Broadcast transaction
+await client.request('blockchain.transaction.broadcast', [txHex]);
+
+// Subscribe to address
+await client.request('blockchain.scripthash.subscribe', [scriptHash]);</code></pre>
+
+<h3>Script Hash Calculation</h3>
+<pre><code>function addressToScriptHash(address) {
+  const script = radiant.Script.buildPublicKeyHashOut(
+    new radiant.Address(address)
+  );
+  const hash = crypto.createHash('sha256')
+    .update(script.toBuffer()).digest();
+  return hash.reverse().toString('hex');  // Reverse for Electrum
+}</code></pre>
+
+<hr>
+
+<h2 id="running-node">9. Running a Node</h2>
+
+<h3>Docker (Recommended)</h3>
+<pre><code>docker run -d --name radiant-node \
+  -p 7332:7332 -p 7333:7333 \
+  -v radiant-data:/root/.radiant \
+  radiant-core:latest \
+  -rpcuser=myuser -rpcpassword=mypassword
+
+docker exec radiant-node radiant-cli getblockchaininfo</code></pre>
+
+<h3>Node Profiles</h3>
+<pre><code>radiantd -nodeprofile=archive   # Full history
+radiantd -nodeprofile=agent     # Minimal footprint
+radiantd -nodeprofile=mining    # Optimized for mining</code></pre>
+
+<h3>RPC Integration</h3>
+<pre><code>class RadiantRPC {
+  constructor(user, pass, host = '127.0.0.1', port = 7332) {
+    this.url = `http://${host}:${port}`;
+    this.auth = { username: user, password: pass };
+  }
+
+  async call(method, params = []) {
+    const response = await axios.post(this.url, {
+      jsonrpc: '2.0', id: Date.now(), method, params
+    }, { auth: this.auth });
+    if (response.data.error) throw new Error(response.data.error.message);
+    return response.data.result;
+  }
+}
+
+const rpc = new RadiantRPC('user', 'pass');
+const info = await rpc.call('getblockchaininfo');</code></pre>
+
+<h3>Useful RPC Commands</h3>
+<pre><code>radiant-cli getblockchaininfo       # Chain status
+radiant-cli getblock &lt;hash&gt;          # Block details
+radiant-cli getrawtransaction &lt;txid&gt; true  # TX details
+radiant-cli getmempoolinfo          # Mempool stats
+radiant-cli getmininginfo           # Mining stats
+radiant-cli getnetworkinfo          # Network info</code></pre>
+
+<hr>
+
+<h2 id="v2-hard-fork">10. V2 Hard Fork (Radiant Core 2.1)</h2>
+
+<h3>Overview</h3>
+<p>Radiant Core 2.1 introduces a hard fork at <strong>block 410,000</strong> (mainnet &amp; testnet3) that activates 6 new and re-enabled opcodes, gated behind the <code>SCRIPT_ENHANCED_REFERENCES</code> flag.</p>
+
+<h3>New Opcodes</h3>
+<table>
+<thead><tr><th>Opcode</th><th>Hex</th><th>Stack Effect</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>OP_BLAKE3</code></td><td>0xee</td><td>data → hash</td><td>Blake3 hash (32-byte output)</td></tr>
+<tr><td><code>OP_K12</code></td><td>0xef</td><td>data → hash</td><td>KangarooTwelve hash (32-byte output)</td></tr>
+<tr><td><code>OP_LSHIFT</code></td><td>0x98</td><td>a b → (a &lt;&lt; b)</td><td>Bitwise left shift</td></tr>
+<tr><td><code>OP_RSHIFT</code></td><td>0x99</td><td>a b → (a &gt;&gt; b)</td><td>Bitwise right shift</td></tr>
+<tr><td><code>OP_2MUL</code></td><td>0x8d</td><td>a → (a * 2)</td><td>Multiply by 2</td></tr>
+<tr><td><code>OP_2DIV</code></td><td>0x8e</td><td>a → (a / 2)</td><td>Divide by 2</td></tr>
+</tbody>
+</table>
+
+<h3>Why These Opcodes</h3>
+<ul>
+<li><strong>OP_BLAKE3 / OP_K12</strong> — Fully on-chain PoW validation for Glyph v2 dMint tokens, eliminating indexer trust dependency</li>
+<li><strong>OP_LSHIFT / OP_RSHIFT</strong> — On-chain ASERT-lite DAA via bit shifts</li>
+<li><strong>OP_2MUL / OP_2DIV</strong> — Efficient numeric scaling for DAA and contract arithmetic</li>
+</ul>
+
+<h3>Using V2 Opcodes</h3>
+<pre><code>const { Script, Opcode } = radiant;
+
+// Blake3 hash verification
+const script = new Script()
+  .add(Opcode.OP_BLAKE3)
+  .add(Opcode.OP_SIZE)
+  .add(Script.buildNumber(32))
+  .add(Opcode.OP_EQUALVERIFY);
+
+// DAA bit-shift
+const daaScript = new Script()
+  .add(Script.buildNumber(1000))  // target
+  .add(Script.buildNumber(2))     // shift amount
+  .add(Opcode.OP_LSHIFT);        // target &lt;&lt; 2 = 4000</code></pre>
+
+<h3>Activation Heights</h3>
+<table>
+<thead><tr><th>Network</th><th>Height</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td>Mainnet</td><td>410,000</td><td>Pending</td></tr>
+<tr><td>Testnet3</td><td>410,000</td><td>Pending</td></tr>
+<tr><td>Scalenet</td><td>1,000</td><td>Active</td></tr>
+<tr><td>Regtest</td><td>200</td><td>Active</td></tr>
+</tbody>
+</table>
+
+<h3>Fee Policy Change</h3>
+<ul>
+<li>Blocks &lt; 410,000: 0.01 RXD/kB (legacy)</li>
+<li>Blocks 410,000 – 414,999: 0.01 RXD/kB (grace period)</li>
+<li>Blocks ≥ 415,000: 0.1 RXD/kB (new minimum)</li>
+</ul>
+
+<h3>Ecosystem Compatibility</h3>
+<table>
+<thead><tr><th>Tool</th><th>V2 Support</th></tr></thead>
+<tbody>
+<tr><td>radiantjs</td><td>OP_BLAKE3/K12 (pure JS), OP_LSHIFT/RSHIFT, OP_2MUL/2DIV in interpreter</td></tr>
+<tr><td>radiantblockchain-constants</td><td>V2 opcode values and names</td></tr>
+<tr><td>RadiantScript</td><td><code>blake3()</code>, <code>k12()</code> compiler globals, <code>tx.state.*</code> induction proof operators</td></tr>
+<tr><td>rxdeb</td><td>Full VM execution of all V2 opcodes</td></tr>
+<tr><td>Glyph-miner</td><td>Blake3/K12 GPU shaders for multi-algo mining</td></tr>
+<tr><td>Photonic Wallet</td><td>Per-algorithm contract bytecodes</td></tr>
+<tr><td>RXinDexer</td><td>Analytics-only (on-chain PoW eliminates indexer validation)</td></tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2 id="ai-integration">11. AI Integration (MCP Server)</h2>
+
+<p>The <code>radiant-mcp-server</code> package makes Radiant natively accessible to AI coding assistants and any HTTP client via a REST API.</p>
+
+<h3>Quick Setup (MCP)</h3>
+<pre><code>{
+  "mcpServers": {
+    "radiant": {
+      "command": "npx",
+      "args": ["radiant-mcp-server"],
+      "env": {
+        "ELECTRUMX_HOST": "electrumx.radiant4people.com",
+        "ELECTRUMX_PORT": "50012",
+        "ELECTRUMX_SSL": "true"
+      }
+    }
+  }
+}</code></pre>
+
+<p>This gives AI agents access to <strong>56 MCP tools</strong> across 9 categories, plus <strong>10 MCP resources</strong>.</p>
+
+<h3>REST API</h3>
+<pre><code>ELECTRUMX_HOST=electrumx.radiant4people.com \
+ELECTRUMX_PORT=50012 ELECTRUMX_SSL=true \
+node dist/rest.js
+
+curl http://localhost:3080/api/chain
+curl http://localhost:3080/api/address/1ADDRESS.../balance
+curl http://localhost:3080/api/token/REF/metadata</code></pre>
+
+<p>See <a href="ai-integration.html">AI Integration Strategy</a> for the full implementation reference.</p>
+
+<hr>
+
+<h2 id="best-practices">12. Best Practices</h2>
+
+<h3>Security</h3>
+<pre><code>// ✅ Validate all inputs
+function validateAddress(addr) {
+  if (!radiant.Address.isValid(addr)) throw new Error('Invalid address');
+}
+
+// ✅ Use secure random for keys
+const privateKey = radiant.PrivateKey.fromRandom();
+
+// ❌ DON'T: Hardcode private keys
+const key = new radiant.PrivateKey('WIF_HERE'); // NEVER in code!
+
+// ✅ Use environment variables
+const key = new radiant.PrivateKey(process.env.PRIVATE_KEY_WIF);</code></pre>
+
+<h3>Error Handling</h3>
+<pre><code>async function sendTransaction(txHex) {
+  try {
+    const result = await electrum.request(
+      'blockchain.transaction.broadcast', [txHex]
+    );
+    return { success: true, txid: result };
+  } catch (error) {
+    if (error.message.includes('insufficient fee'))
+      return { success: false, error: 'FEE_TOO_LOW' };
+    if (error.message.includes('missing inputs'))
+      return { success: false, error: 'UTXO_SPENT' };
+    return { success: false, error: 'UNKNOWN', details: error.message };
+  }
+}</code></pre>
+
+<h3>UTXO Management</h3>
+<pre><code>// Consolidate small UTXOs
+function shouldConsolidate(utxos) {
+  const smallUtxos = utxos.filter(u => u.value &lt; 10000);
+  return smallUtxos.length > 10;
+}
+
+// Coin selection
+function selectCoins(utxos, target) {
+  const sorted = [...utxos].sort((a, b) => b.value - a.value);
+  let sum = 0;
+  const selected = [];
+  for (const utxo of sorted) {
+    selected.push(utxo);
+    sum += utxo.value;
+    if (sum >= target) break;
+  }
+  return { selected, sum };
+}</code></pre>
+
+<hr>
+
+<h2 id="resources">13. Resources</h2>
+
+<h3>Official Documentation</h3>
+<table>
+<thead><tr><th>Resource</th><th>Link</th></tr></thead>
+<tbody>
+<tr><td>Whitepaper</td><td><a href="https://radiantblockchain.org/radiant.pdf">radiantblockchain.org/radiant.pdf</a></td></tr>
+<tr><td>System Design</td><td><a href="https://radiant4people.com/tech/radiant-system-design">radiant4people.com</a></td></tr>
+<tr><td>REP Proposals</td><td><a href="https://github.com/Radiant-Core/REP">github.com/Radiant-Core/REP</a></td></tr>
+</tbody>
+</table>
+
+<h3>GitHub Repositories</h3>
+<table>
+<thead><tr><th>Repository</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><a href="https://github.com/Radiant-Core/Radiant-Core">Radiant-Core</a></td><td>Full node</td></tr>
+<tr><td><a href="https://github.com/Radiant-Core/radiantjs">radiantjs</a></td><td>JavaScript SDK</td></tr>
+<tr><td><a href="https://github.com/Radiant-Core/RadiantScript">RadiantScript</a></td><td>Contract compiler</td></tr>
+<tr><td><a href="https://github.com/Radiant-Core/rxdeb">rxdeb</a></td><td>Script debugger</td></tr>
+<tr><td><a href="https://github.com/Radiant-Core/ElectrumX">ElectrumX</a></td><td>Electrum server</td></tr>
+<tr><td><a href="https://github.com/Radiant-Core/Photonic-Wallet">Photonic-Wallet</a></td><td>Reference wallet</td></tr>
+<tr><td><a href="https://github.com/Radiant-Core/radiantblockchain-constants">constants</a></td><td>Shared constants</td></tr>
+</tbody>
+</table>
+
+<h3>Community</h3>
+<table>
+<thead><tr><th>Platform</th><th>Link</th></tr></thead>
+<tbody>
+<tr><td>Discord</td><td><a href="https://discord.gg/radiantblockchain">discord.gg/radiantblockchain</a></td></tr>
+<tr><td>Telegram</td><td><a href="https://t.me/RadiantBlockchain">t.me/RadiantBlockchain</a></td></tr>
+<tr><td>Twitter</td><td><a href="https://x.com/RXD_Community">@RXD_Community</a></td></tr>
+</tbody>
+</table>
+
+<h3>Tools</h3>
+<table>
+<thead><tr><th>Tool</th><th>Purpose</th><th>Link</th></tr></thead>
+<tbody>
+<tr><td>Block Explorer</td><td>View transactions</td><td><a href="https://radiantexplorer.com">radiantexplorer.com</a></td></tr>
+<tr><td>Glyph Explorer</td><td>Browse tokens</td><td><a href="https://glyph-explorer.rxd-radiant.com">glyph-explorer</a></td></tr>
+<tr><td>Server Status</td><td>ElectrumX health</td><td><a href="https://radiantblockchain-community.github.io/electrumx-check/">electrumx-check</a></td></tr>
+<tr><td>Faucet</td><td>Testnet RXD</td><td><a href="https://faucet.radiant4people.com/">faucet</a></td></tr>
+</tbody>
+</table>
+
+    </div>
+    <div class="doc-footer">
+        <span><a href="./">← All Docs</a></span>
+        <span>&copy; 2022–2026 Radiant Core Contributors</span>
+    </div>
+</div>
+</body>
+</html>

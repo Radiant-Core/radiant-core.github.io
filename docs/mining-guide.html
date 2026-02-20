@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mining Guide — Radiant Core Docs</title>
+    <meta name="description" content="Radiant mining guide: GPU/ASIC setup, pool configuration, solo mining, Glyph dMint token mining, profitability, and troubleshooting.">
+    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="stylesheet" href="docs.css">
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="container">
+        <a href="../" class="nav-brand"><img src="../radiant-logo-darkmode.jpg" alt="Radiant"> Radiant Core</a>
+        <button class="hamburger" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Menu">&#9776;</button>
+        <ul class="nav-links">
+            <li><a href="../#features">Features</a></li>
+            <li><a href="../#v2-upgrade">V2 Upgrade</a></li>
+            <li><a href="./" class="nav-active">Docs</a></li>
+            <li><a href="../#ecosystem">Ecosystem</a></li>
+            <li><a href="../#mining">Mining</a></li>
+            <li><a href="../explorer/">Explorer</a></li>
+            <li><a href="https://github.com/Radiant-Core" class="nav-cta">GitHub ↗</a></li>
+        </ul>
+    </div>
+</nav>
+
+<div class="doc-container">
+    <div class="breadcrumb"><a href="./">Docs</a> <span class="sep">/</span> <span>Mining Guide</span></div>
+
+    <div class="doc-header">
+        <h1>Radiant Mining Guide</h1>
+        <div class="doc-meta"><span>Version 1.1</span> <span>Last Updated: February 2026</span></div>
+    </div>
+
+    <div class="doc-content">
+
+<h2 id="overview">Overview</h2>
+<p>Radiant uses a <strong>SHA512/256 proof-of-work</strong> algorithm for network security and coin distribution. This guide covers mining RXD (native coin) and Glyph tokens (mineable assets).</p>
+
+<hr>
+
+<h2 id="mining-basics">1. Mining Basics</h2>
+
+<h3>Network Parameters</h3>
+<table>
+<thead><tr><th>Parameter</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td><strong>Algorithm</strong></td><td>SHA512/256</td></tr>
+<tr><td><strong>Block Time</strong></td><td>5 minutes</td></tr>
+<tr><td><strong>Block Reward</strong></td><td>25,000 RXD</td></tr>
+<tr><td><strong>Halving Interval</strong></td><td>210,000 blocks</td></tr>
+<tr><td><strong>Difficulty Adjustment</strong></td><td>Every block (DAA)</td></tr>
+</tbody>
+</table>
+
+<h3>Types of Mining</h3>
+<table>
+<thead><tr><th>Type</th><th>Description</th><th>Best For</th></tr></thead>
+<tbody>
+<tr><td><strong>RXD Mining</strong></td><td>Mine native Radiant coins</td><td>High-hashrate operations</td></tr>
+<tr><td><strong>Glyph dMint</strong></td><td>Mine fungible Glyph tokens</td><td>Token creators, smaller miners</td></tr>
+<tr><td><strong>Pool Mining</strong></td><td>Share hashrate with others</td><td>Most miners</td></tr>
+<tr><td><strong>Solo Mining</strong></td><td>Mine directly to your wallet</td><td>Large operations only</td></tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2 id="hardware">2. Hardware Requirements</h2>
+
+<h3>NVIDIA GPUs</h3>
+<table>
+<thead><tr><th>GPU</th><th>Hashrate (approx.)</th><th>Power</th><th>Efficiency</th></tr></thead>
+<tbody>
+<tr><td>RTX 4090</td><td>~2.5 GH/s</td><td>450W</td><td>5.5 MH/W</td></tr>
+<tr><td>RTX 4080</td><td>~1.8 GH/s</td><td>320W</td><td>5.6 MH/W</td></tr>
+<tr><td>RTX 4070 Ti</td><td>~1.4 GH/s</td><td>285W</td><td>4.9 MH/W</td></tr>
+<tr><td>RTX 3090</td><td>~1.5 GH/s</td><td>350W</td><td>4.3 MH/W</td></tr>
+<tr><td>RTX 3080</td><td>~1.2 GH/s</td><td>320W</td><td>3.7 MH/W</td></tr>
+<tr><td>RTX 3070</td><td>~0.9 GH/s</td><td>220W</td><td>4.1 MH/W</td></tr>
+</tbody>
+</table>
+
+<h3>AMD GPUs</h3>
+<table>
+<thead><tr><th>GPU</th><th>Hashrate (approx.)</th><th>Power</th><th>Efficiency</th></tr></thead>
+<tbody>
+<tr><td>RX 7900 XTX</td><td>~1.8 GH/s</td><td>355W</td><td>5.1 MH/W</td></tr>
+<tr><td>RX 7900 XT</td><td>~1.5 GH/s</td><td>315W</td><td>4.8 MH/W</td></tr>
+<tr><td>RX 6900 XT</td><td>~1.1 GH/s</td><td>300W</td><td>3.7 MH/W</td></tr>
+<tr><td>RX 6800 XT</td><td>~0.95 GH/s</td><td>280W</td><td>3.4 MH/W</td></tr>
+</tbody>
+</table>
+
+<h3>Minimum Requirements</h3>
+<ul>
+<li><strong>GPU</strong>: 4GB VRAM minimum (8GB+ recommended)</li>
+<li><strong>CPU</strong>: Modern multi-core processor</li>
+<li><strong>RAM</strong>: 8GB minimum</li>
+<li><strong>Storage</strong>: SSD recommended</li>
+<li><strong>Internet</strong>: Stable connection (low latency preferred)</li>
+</ul>
+
+<h3>Power Cost Calculator</h3>
+<pre><code>Monthly Cost = (Watts × 24 × 30) / 1000 × $/kWh
+
+Example (RTX 4090):
+(450W × 24 × 30) / 1000 × $0.12 = $38.88/month</code></pre>
+
+<hr>
+
+<h2 id="software">3. Mining Software</h2>
+
+<h3>For NVIDIA GPUs</h3>
+
+<h4>CCMiner (Recommended)</h4>
+<pre><code># Download: https://github.com/radifier/radiator/releases
+
+ccminer -a sha512256d \
+  -o stratum+tcp://stratum.vipor.net:5068 \
+  -u 1YourRadiantAddress.rig1 \
+  --intensity 21 \
+  --cpu-priority 3</code></pre>
+
+<h4>BZMiner</h4>
+<pre><code># Download: https://www.bzminer.com/
+bzminer -a radiant -w YOUR_WALLET -p stratum+tcp://pool:port</code></pre>
+
+<h4>Rigel Miner</h4>
+<pre><code># Download: https://github.com/rigelminer/rigel/releases/
+rigel -a sha512256d -o stratum+tcp://pool:port -u WALLET.worker</code></pre>
+
+<h3>For AMD GPUs</h3>
+
+<h4>SRBMiner-Multi (Recommended)</h4>
+<pre><code># Download: https://github.com/doktor83/SRBMiner-Multi/releases
+
+SRBMiner-MULTI --disable-cpu --algorithm sha512_256d_radiant \
+  --pool stratum+tcp://pool:port \
+  --wallet YOUR_WALLET.worker</code></pre>
+
+<h4>Wildrig Multi</h4>
+<pre><code># Download: https://github.com/andru-kun/wildrig-multi/releases
+wildrig-multi -a sha512256d -o stratum+tcp://pool:port -u WALLET.worker -p x</code></pre>
+
+<h3>HiveOS Configuration</h3>
+<ol>
+<li>Create new flight sheet</li>
+<li>Select coin: <strong>RXD (Radiant)</strong></li>
+<li>Select pool from list or add custom</li>
+<li>Select miner: CCMiner, SRBMiner, or BZMiner</li>
+<li>Configure wallet address</li>
+<li>Apply flight sheet</li>
+</ol>
+
+<pre><code>Wallet Template: %WAL%.%WORKER_NAME%</code></pre>
+
+<hr>
+
+<h2 id="pools">4. Mining Pools</h2>
+
+<table>
+<thead><tr><th>Pool</th><th>URL</th><th>Fee</th><th>Features</th></tr></thead>
+<tbody>
+<tr><td><strong>Vipor</strong></td><td><a href="https://vipor.net/">vipor.net</a></td><td>0.9%</td><td>Popular, stable</td></tr>
+<tr><td><strong>K1pool</strong></td><td><a href="https://k1pool.com/pool/rxd">k1pool.com</a></td><td>0.9%</td><td>Good uptime</td></tr>
+<tr><td><strong>Woolypooly</strong></td><td><a href="https://woolypooly.com/">woolypooly.com</a></td><td>0.9%</td><td>Multi-coin</td></tr>
+<tr><td><strong>Humpool</strong></td><td><a href="https://humpool.com/">humpool.com</a></td><td>1%</td><td>Asian servers</td></tr>
+<tr><td><strong>TW-pool</strong></td><td><a href="https://tw-pool.com/">tw-pool.com</a></td><td>0.9%</td><td>Taiwan based</td></tr>
+<tr><td><strong>Kryptex</strong></td><td><a href="https://pool.kryptex.com/rxd">pool.kryptex.com</a></td><td>1%</td><td>Auto-exchange</td></tr>
+<tr><td><strong>Rplant</strong></td><td><a href="https://pool.rplant.xyz/">pool.rplant.xyz</a></td><td>0.9%</td><td>Multiple regions</td></tr>
+</tbody>
+</table>
+
+<h3>Pool Connection Examples</h3>
+<pre><code># Vipor Pool
+-o stratum+tcp://stratum.vipor.net:5068
+
+# K1pool
+-o stratum+tcp://eu.rxd.k1pool.com:7068
+
+# Woolypooly
+-o stratum+tcp://pool.woolypooly.com:3124
+
+# Humpool
+-o stratum+tcp://stratum.humpool.com:5068</code></pre>
+
+<hr>
+
+<h2 id="solo-mining">5. Solo Mining to Your Own Node</h2>
+
+<p>Solo mining allows you to mine directly to your own Radiant Core node without relying on third-party pools.</p>
+
+<h3>Benefits</h3>
+<ul>
+<li><strong>Full block rewards</strong> — Keep 100% of mined blocks (25,000 RXD + fees)</li>
+<li><strong>Privacy</strong> — No pool operator sees your mining activity</li>
+<li><strong>Independence</strong> — No pool fees or downtime concerns</li>
+<li><strong>Decentralization</strong> — Strengthens the network</li>
+</ul>
+
+<h3>Quick Setup (5 Minutes)</h3>
+
+<h4>Step 1: Build and Start Node</h4>
+<pre><code>git clone https://github.com/Radiant-Core/Radiant-Core.git
+cd Radiant-Core
+mkdir build &amp;&amp; cd build
+cmake ..
+make -j$(nproc)
+
+# Create mining wallet
+./src/radiant-cli createwallet "miner"
+./src/radiant-cli -rpcwallet=miner getnewaddress</code></pre>
+
+<h4>Step 2: Configure Node</h4>
+<p>Create or edit <code>~/.radiant/radiant.conf</code>:</p>
+<pre><code># Server settings (REQUIRED for mining)
+server=1
+daemon=1
+
+# RPC credentials (use strong, unique values!)
+rpcuser=your_secure_username
+rpcpassword=your_secure_password_here
+
+# Network settings
+rpcallowip=127.0.0.1
+rpcallowip=192.168.0.0/16
+
+# Mining profile for optimal performance
+nodeprofile=mining
+
+# Optional: Bind to all interfaces for remote miners
+rpcbind=0.0.0.0</code></pre>
+
+<h4>Step 3: Start the Node</h4>
+<pre><code>./build/src/radiantd
+./build/src/radiant-cli getblockchaininfo</code></pre>
+
+<h4>Step 4: Start the Stratum Proxy</h4>
+<pre><code>export RPC_USER="your_secure_username"
+export RPC_PASS="your_secure_password_here"
+export RPC_PORT="7332"
+export RPC_WALLET="miner"
+export STRATUM_PORT="3333"
+export STRATUM_DIFFICULTY="8"
+
+cd mining
+python3 stratum_proxy.py</code></pre>
+
+<h4>Step 5: Configure Your ASIC Miner</h4>
+<pre><code>Pool URL: stratum+tcp://YOUR_NODE_IP:3333
+Worker: 1YourRadiantAddress.ASIC01
+Password: x</code></pre>
+
+<h3>Verifying Mining is Working</h3>
+<pre><code># Check node is receiving work
+./build/src/radiant-cli getmininginfo
+
+# Check wallet balance
+./build/src/radiant-cli -rpcwallet=miner getbalance</code></pre>
+
+<h3>Security Recommendations</h3>
+<ol>
+<li><strong>Firewall</strong>: Only expose port 3333 to your local network</li>
+<li><strong>Strong credentials</strong>: <code>export RPC_PASS="$(openssl rand -base64 32)"</code></li>
+<li><strong>Worker allowlist</strong>: <code>export ALLOWED_WORKERS="wallet1.asic1,wallet1.asic2"</code></li>
+</ol>
+
+<hr>
+
+<h2 id="glyph-mining">6. Glyph Token Mining (dMint)</h2>
+
+<h3>What is dMint?</h3>
+<p>Decentralized Minting (dMint) allows anyone to mine <strong>Glyph fungible tokens</strong> instead of native RXD. Token creators set the mining algorithm, difficulty/DAA mode, total supply, and reward per solve.</p>
+
+<h3>V2 On-Chain PoW Validation (Radiant Core 2.1)</h3>
+<blockquote>
+<p>Starting at <strong>block 410,000</strong>, Glyph v2 dMint contracts validate proof-of-work <strong>entirely on-chain</strong> using new hash opcodes. <code>OP_BLAKE3</code> and <code>OP_K12</code> execute hash functions natively in the script engine. The DAA is computed on-chain using <code>OP_LSHIFT</code>/<code>OP_RSHIFT</code> (ASERT-lite). No indexer trust required. This eliminates griefing attacks where invalid work could consume token state. v1 dMint tokens (SHA256d with fixed difficulty) continue to work unchanged after the fork.</p>
+</blockquote>
+
+<h3>Supported Algorithms</h3>
+<table>
+<thead><tr><th>Algorithm</th><th>ID</th><th>Best Hardware</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td><strong>SHA256d</strong></td><td>0x00</td><td>NVIDIA/AMD</td><td>Active (v1)</td></tr>
+<tr><td><strong>Blake3</strong></td><td>0x01</td><td>NVIDIA/AMD</td><td>Post-fork (v2)</td></tr>
+<tr><td><strong>KangarooTwelve</strong></td><td>0x02</td><td>NVIDIA/AMD</td><td>Post-fork (v2)</td></tr>
+</tbody>
+</table>
+
+<h3>Mining with Glyph-Miner</h3>
+
+<h4>Browser Mining (WebGPU)</h4>
+<ol>
+<li>Visit <a href="https://github.com/Radiant-Core/Glyph-miner">Glyph Miner</a></li>
+<li>Connect Photonic Wallet</li>
+<li>Select token contract to mine</li>
+<li>Choose algorithm and start mining</li>
+</ol>
+
+<h4>CLI Mining</h4>
+<pre><code>git clone https://github.com/Radiant-Core/Glyph-miner
+cd Glyph-miner
+pnpm install
+
+# List available algorithms
+npm run cli -- --list-algorithms
+
+# Start mining with Blake3
+npm run cli -- \
+  -a blake3 \
+  -w YOUR_WALLET_ADDRESS \
+  -c CONTRACT_REF \
+  -d 10000
+
+# Run benchmark
+npm run cli -- --benchmark</code></pre>
+
+<h3>DAA Modes</h3>
+<table>
+<thead><tr><th>Mode</th><th>Description</th><th>Use Case</th></tr></thead>
+<tbody>
+<tr><td><strong>Fixed</strong></td><td>Constant difficulty</td><td>Predictable mining</td></tr>
+<tr><td><strong>Epoch</strong></td><td>Bitcoin-style adjustment</td><td>Long-term stability</td></tr>
+<tr><td><strong>ASERT</strong></td><td>Exponential moving average</td><td>Responsive adjustment</td></tr>
+<tr><td><strong>LWMA</strong></td><td>Linear weighted average</td><td>Smooth adjustment</td></tr>
+<tr><td><strong>Schedule</strong></td><td>Predetermined curve</td><td>Controlled distribution</td></tr>
+</tbody>
+</table>
+
+<h3>Finding Mineable Tokens</h3>
+<ul>
+<li><strong>Glyph Portal</strong>: <a href="https://glyph.radiant4people.com/">glyph.radiant4people.com</a></li>
+<li><strong>Glyph Explorer</strong>: <a href="https://glyph-explorer.rxd-radiant.com/">glyph-explorer.rxd-radiant.com</a></li>
+</ul>
+
+<hr>
+
+<h2 id="profitability">7. Profitability</h2>
+
+<h3>Online Calculators</h3>
+<table>
+<thead><tr><th>Calculator</th><th>Link</th></tr></thead>
+<tbody>
+<tr><td><strong>Whattomine</strong></td><td><a href="https://whattomine.com/">whattomine.com</a></td></tr>
+<tr><td><strong>Hashrate.no</strong></td><td><a href="https://hashrate.no/">hashrate.no</a></td></tr>
+<tr><td><strong>Minerstat</strong></td><td><a href="https://minerstat.com/coin/RXD">minerstat.com/coin/RXD</a></td></tr>
+<tr><td><strong>MiningPoolStats</strong></td><td><a href="https://miningpoolstats.stream/radiant">miningpoolstats.stream/radiant</a></td></tr>
+</tbody>
+</table>
+
+<h3>Manual Calculation</h3>
+<pre><code>Daily Revenue = (Your Hashrate / Network Hashrate) × Daily Blocks × Block Reward × Price
+
+Daily Blocks = 24 × 60 / 5 = 288 blocks/day
+
+Example:
+Hashrate: 10 GH/s, Network: 100 TH/s, Price: $0.001/RXD
+Daily = (10 / 100,000) × 288 × 25,000 × $0.001 = $0.72/day</code></pre>
+
+<hr>
+
+<h2 id="troubleshooting">8. Troubleshooting</h2>
+
+<h3>Common Issues</h3>
+
+<table>
+<thead><tr><th>Issue</th><th>Solution</th></tr></thead>
+<tbody>
+<tr><td>Connection refused</td><td>Check connectivity with <code>ping</code>; try alternate port; check firewall</td></tr>
+<tr><td>Low hashrate</td><td>Increase intensity; check driver version; monitor temps for throttling</td></tr>
+<tr><td>Invalid/rejected shares</td><td>Check wallet address format; verify algorithm is <code>sha512256d</code>; update mining software</td></tr>
+<tr><td>GPU not detected</td><td>Run <code>nvidia-smi</code> or <code>rocm-smi</code>; update drivers</td></tr>
+<tr><td>Miner crashing</td><td>Lower intensity/overclock; check PSU wattage; monitor temps</td></tr>
+</tbody>
+</table>
+
+<h3>Optimization Tips</h3>
+<ol>
+<li><strong>Overclocking</strong> (at your own risk): Core +100-150 MHz, Memory +500-1000 MHz, Power Limit 80-90%</li>
+<li><strong>Linux</strong>: Set GPU to performance mode with <code>nvidia-smi -pm 1</code></li>
+<li><strong>Reduce stale shares</strong>: Use closest pool; use wired connection; enable stale share submission</li>
+</ol>
+
+<h3>Getting Help</h3>
+<ul>
+<li><strong>Discord</strong>: <a href="https://discord.gg/radiantblockchain">discord.gg/radiantblockchain</a> — #mining channel</li>
+<li><strong>Telegram</strong>: <a href="https://t.me/RadiantBlockchain">t.me/RadiantBlockchain</a></li>
+</ul>
+
+<hr>
+
+<h2 id="quick-start-commands">Appendix: Quick Start Commands</h2>
+
+<h3>NVIDIA + Vipor Pool</h3>
+<pre><code>ccminer -a sha512256d \
+  -o stratum+tcp://stratum.vipor.net:5068 \
+  -u YOUR_WALLET.rig1 \
+  -p x</code></pre>
+
+<h3>AMD + K1pool</h3>
+<pre><code>SRBMiner-MULTI --disable-cpu \
+  --algorithm sha512_256d_radiant \
+  --pool stratum+tcp://eu.rxd.k1pool.com:7068 \
+  --wallet YOUR_WALLET.rig1</code></pre>
+
+<p><em>Happy mining! For questions, join the Radiant Discord community.</em></p>
+
+    </div>
+    <div class="doc-footer">
+        <span><a href="./">← All Docs</a></span>
+        <span>&copy; 2022–2026 Radiant Core Contributors</span>
+    </div>
+</div>
+</body>
+</html>

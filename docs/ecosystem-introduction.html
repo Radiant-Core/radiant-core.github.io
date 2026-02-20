@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ecosystem Introduction — Radiant Core Docs</title>
+    <meta name="description" content="Introduction to the Radiant blockchain ecosystem: what is Radiant, why Radiant, Glyph tokens, core components, and getting started.">
+    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="stylesheet" href="docs.css">
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="container">
+        <a href="../" class="nav-brand">
+            <img src="../radiant-logo-darkmode.jpg" alt="Radiant">
+            Radiant Core
+        </a>
+        <button class="hamburger" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Menu">&#9776;</button>
+        <ul class="nav-links">
+            <li><a href="../#features">Features</a></li>
+            <li><a href="../#v2-upgrade">V2 Upgrade</a></li>
+            <li><a href="./" class="nav-active">Docs</a></li>
+            <li><a href="../#ecosystem">Ecosystem</a></li>
+            <li><a href="../#mining">Mining</a></li>
+            <li><a href="../explorer/">Explorer</a></li>
+            <li><a href="https://github.com/Radiant-Core" class="nav-cta">GitHub ↗</a></li>
+        </ul>
+    </div>
+</nav>
+
+<div class="doc-container">
+    <div class="breadcrumb">
+        <a href="./">Docs</a> <span class="sep">/</span> <span>Ecosystem Introduction</span>
+    </div>
+
+    <div class="doc-header">
+        <h1>Radiant Blockchain: Ecosystem Introduction</h1>
+        <div class="doc-meta">
+            <span>Version 1.1</span>
+            <span>Last Updated: February 2026</span>
+        </div>
+    </div>
+
+    <div class="doc-content">
+
+<h2 id="what-is-radiant">What is Radiant?</h2>
+
+<p>Radiant (RXD) is a <strong>Layer 1 proof-of-work blockchain</strong> designed for digital assets and instant payments. Built on the foundations of Bitcoin's UTXO model, Radiant introduces unique innovations that enable true digital ownership without requiring smart contract virtual machines.</p>
+
+<h3>Key Characteristics</h3>
+
+<table>
+<thead><tr><th>Feature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><strong>Consensus</strong></td><td>SHA512/256 Proof-of-Work</td></tr>
+<tr><td><strong>Block Time</strong></td><td>5 minutes</td></tr>
+<tr><td><strong>Block Size</strong></td><td>256 MB</td></tr>
+<tr><td><strong>Max Supply</strong></td><td>21,000,000,000 RXD</td></tr>
+<tr><td><strong>Decimals</strong></td><td>8 (like Bitcoin)</td></tr>
+<tr><td><strong>Block Reward</strong></td><td>25,000 RXD (halving every 210,000 blocks)</td></tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2 id="why-radiant">Why Radiant?</h2>
+
+<h3>1. True Digital Ownership</h3>
+
+<p>Unlike account-based blockchains, Radiant uses the <strong>UTXO model</strong> enhanced with <strong>induction proofs</strong> and a <strong>reference system</strong>. This enables:</p>
+
+<ul>
+<li><strong>Verifiable Authenticity</strong>: Every token has a traceable origin</li>
+<li><strong>No Counterfeits</strong>: References provide cryptographic proof of ownership</li>
+<li><strong>Scalable Assets</strong>: Millions of unique tokens without global state</li>
+</ul>
+
+<h3>2. Native Script Capabilities</h3>
+
+<p>Radiant extends Bitcoin's script language with:</p>
+
+<ul>
+<li><strong>64-bit Arithmetic</strong>: Native support for large numbers</li>
+<li><strong>Transaction Introspection</strong>: Scripts can inspect their own transaction</li>
+<li><strong>Reference Opcodes</strong>: Track and validate token authenticity</li>
+<li><strong>State Separators</strong>: Enable stateful contracts</li>
+<li><strong>V2 Hash Opcodes</strong> (Block 410,000+): OP_BLAKE3 and OP_K12 for on-chain proof-of-work validation</li>
+<li><strong>Bitwise Shifts</strong> (Block 410,000+): OP_LSHIFT and OP_RSHIFT for on-chain difficulty adjustment</li>
+<li><strong>Induction Proofs</strong>: O(1) provenance verification via references and TxId v3 preimage</li>
+<li><strong>Transaction State</strong> (<code>OP_PUSH_TX_STATE</code>): Access txid, total input/output values for fee verification and self-referencing contracts</li>
+</ul>
+
+<h3>3. Performance at Scale</h3>
+
+<ul>
+<li><strong>High Throughput</strong>: 256 MB blocks support massive transaction volumes</li>
+<li><strong>Low Fees</strong>: Economically viable for micro-transactions</li>
+<li><strong>Instant Confirmation</strong>: Transactions propagate in seconds (0-conf safe for small amounts)</li>
+</ul>
+
+<hr>
+
+<h2 id="glyph-token-standard">The Glyph Token Standard</h2>
+
+<p><strong>Glyph</strong> is Radiant's native token protocol, enabling:</p>
+
+<table>
+<thead><tr><th>Token Type</th><th>Use Cases</th></tr></thead>
+<tbody>
+<tr><td><strong>Fungible Tokens (FT)</strong></td><td>Currencies, points, shares, voting tokens</td></tr>
+<tr><td><strong>Non-Fungible Tokens (NFT)</strong></td><td>Art, collectibles, tickets, certificates</td></tr>
+<tr><td><strong>Data Tokens (DAT)</strong></td><td>Timestamps, attestations, anchors</td></tr>
+<tr><td><strong>Containers</strong></td><td>NFT collections, albums, bundles</td></tr>
+</tbody>
+</table>
+
+<h3>Glyph v2 Features</h3>
+
+<ul>
+<li><strong>On-chain Royalties</strong>: Enforce creator royalties at the script level</li>
+<li><strong>Decentralized Minting (dMint)</strong>: Proof-of-work token distribution</li>
+<li><strong>Encrypted Content</strong>: Private content with on-chain keys</li>
+<li><strong>Mutable State</strong>: Updateable NFT metadata</li>
+<li><strong>WAVE Naming</strong>: Blockchain-native DNS alternative</li>
+</ul>
+
+<hr>
+
+<h2 id="ecosystem-overview">Ecosystem Overview</h2>
+
+<pre class="diagram"><code>┌─────────────────────────────────────────────────────────────────┐
+│                        RADIANT ECOSYSTEM                         │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  ┌────────────────────────────────────────────────────────────┐ │
+│  │                    INFRASTRUCTURE LAYER                     │ │
+│  │                                                             │ │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │ │
+│  │  │Radiant-Core │  │ ElectrumX   │  │ Block Explorers     │ │ │
+│  │  │(Full Node)  │  │ (Indexer)   │  │ (radiantexplorer)   │ │ │
+│  │  └─────────────┘  └─────────────┘  └─────────────────────┘ │ │
+│  └────────────────────────────────────────────────────────────┘ │
+│                                                                  │
+│  ┌────────────────────────────────────────────────────────────┐ │
+│  │                    DEVELOPMENT LAYER                        │ │
+│  │                                                             │ │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │ │
+│  │  │ radiantjs   │  │RadiantScript│  │    rxdeb            │ │ │
+│  │  │ (JS SDK)    │  │ (Compiler)  │  │   (Debugger)        │ │ │
+│  │  └─────────────┘  └─────────────┘  └─────────────────────┘ │ │
+│  └────────────────────────────────────────────────────────────┘ │
+│                                                                  │
+│  ┌────────────────────────────────────────────────────────────┐ │
+│  │                    APPLICATION LAYER                        │ │
+│  │                                                             │ │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │ │
+│  │  │  Photonic   │  │ Glyph-miner │  │    RadiantMM        │ │ │
+│  │  │  (Wallet)   │  │  (Mining)   │  │     (DEX)           │ │ │
+│  │  └─────────────┘  └─────────────┘  └─────────────────────┘ │ │
+│  └────────────────────────────────────────────────────────────┘ │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘</code></pre>
+
+<hr>
+
+<h2 id="core-components">Core Components</h2>
+
+<h3>Infrastructure</h3>
+
+<table>
+<thead><tr><th>Component</th><th>Description</th><th>Link</th></tr></thead>
+<tbody>
+<tr><td><strong>Radiant-Core</strong></td><td>Full node implementation</td><td><a href="https://github.com/Radiant-Core/Radiant-Core">GitHub</a></td></tr>
+<tr><td><strong>ElectrumX</strong></td><td>Electrum server for light clients</td><td><a href="https://github.com/Radiant-Core/ElectrumX">GitHub</a></td></tr>
+<tr><td><strong>Block Explorers</strong></td><td>View transactions and tokens</td><td><a href="https://radiantexplorer.com">radiantexplorer.com</a></td></tr>
+</tbody>
+</table>
+
+<h3>Development Tools</h3>
+
+<table>
+<thead><tr><th>Tool</th><th>Purpose</th><th>Link</th></tr></thead>
+<tbody>
+<tr><td><strong>radiantjs</strong></td><td>JavaScript/TypeScript SDK</td><td><a href="https://github.com/Radiant-Core/radiantjs">GitHub</a></td></tr>
+<tr><td><strong>RadiantScript</strong></td><td>Smart contract language</td><td><a href="https://github.com/Radiant-Core/RadiantScript">GitHub</a></td></tr>
+<tr><td><strong>rxdeb</strong></td><td>Script debugger</td><td><a href="https://github.com/Radiant-Core/rxdeb">GitHub</a></td></tr>
+<tr><td><strong>constants</strong></td><td>Shared protocol constants</td><td><a href="https://github.com/Radiant-Core/radiantblockchain-constants">GitHub</a></td></tr>
+<tr><td><strong>radiant-mcp-server</strong></td><td>AI integration (MCP + REST API)</td><td><a href="https://github.com/Radiant-Core/radiant-mcp-server">GitHub</a></td></tr>
+</tbody>
+</table>
+
+<h3>Wallets</h3>
+
+<table>
+<thead><tr><th>Wallet</th><th>Platform</th><th>Features</th></tr></thead>
+<tbody>
+<tr><td><strong>Photonic Wallet</strong></td><td>Web, Desktop (Tauri)</td><td>Glyph tokens, minting, IPFS</td></tr>
+<tr><td><strong>Electron Wallet</strong></td><td>Desktop, Mobile</td><td>Traditional wallet, multi-platform</td></tr>
+<tr><td><strong>Chainbow</strong></td><td>Mobile (Android/iOS)</td><td>User-friendly mobile wallet</td></tr>
+<tr><td><strong>Tangem</strong></td><td>Hardware</td><td>Cold storage support</td></tr>
+</tbody>
+</table>
+
+<h3>Applications</h3>
+
+<table>
+<thead><tr><th>App</th><th>Purpose</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td><strong>Glyph-miner</strong></td><td>Mine Glyph tokens</td><td>Beta</td></tr>
+<tr><td><strong>RadiantMM</strong></td><td>Decentralized exchange</td><td>Development</td></tr>
+<tr><td><strong>radiant-node-helper</strong></td><td>Node management UI</td><td>Stable</td></tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2 id="getting-started">Getting Started</h2>
+
+<h3>For Users</h3>
+
+<ol>
+<li><strong>Get a Wallet</strong>
+    <ul>
+    <li>Web: <a href="https://photonic.radiant4people.com/">Photonic Wallet</a></li>
+    <li>Mobile: <a href="https://chainbow.io/">Chainbow</a></li>
+    <li>Hardware: <a href="https://tangem.com/">Tangem</a></li>
+    </ul>
+</li>
+<li><strong>Get Some RXD</strong>
+    <ul>
+    <li>Faucet: <a href="https://faucet.radiant4people.com/">faucet.radiant4people.com</a></li>
+    <li>Exchanges: MEXC, CoinEx, XT</li>
+    </ul>
+</li>
+<li><strong>Explore</strong>
+    <ul>
+    <li>View transactions: <a href="https://radiantexplorer.com">radiantexplorer.com</a></li>
+    <li>Browse Glyphs: <a href="https://glyph-explorer.rxd-radiant.com">glyph-explorer.rxd-radiant.com</a></li>
+    </ul>
+</li>
+</ol>
+
+<h3>For Miners</h3>
+
+<ol>
+<li><strong>Choose Mining Software</strong> — NVIDIA: CCMiner, BZMiner, Rigel. AMD: SRBMiner, Wildrig. Browser: Glyph-miner WebGPU</li>
+<li><strong>Join a Pool</strong> — <a href="https://vipor.net/">Vipor</a>, <a href="https://k1pool.com/pool/rxd">K1pool</a>, <a href="https://woolypooly.com/">Woolypooly</a></li>
+<li><strong>Start Mining</strong> — See <a href="mining-guide.html">Mining Guide</a></li>
+</ol>
+
+<h3>For Developers</h3>
+
+<ol>
+<li><strong>Set Up Development Environment</strong>
+<pre><code>npm install @radiantblockchain/radiantjs
+npm install @radiantblockchain/constants</code></pre>
+</li>
+<li><strong>Run a Node</strong>
+<pre><code>docker run -d --name radiant-node \
+  -p 7332:7332 -p 7333:7333 \
+  radiant-core:latest</code></pre>
+</li>
+<li><strong>Write Smart Contracts</strong> — See <a href="developer-guide.html">Developer Guide</a></li>
+</ol>
+
+<hr>
+
+<h2 id="network-parameters">Network Parameters</h2>
+
+<h3>Mainnet</h3>
+
+<table>
+<thead><tr><th>Parameter</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>P2P Port</td><td>7333</td></tr>
+<tr><td>RPC Port</td><td>7332</td></tr>
+<tr><td>Address Prefix</td><td>1... (P2PKH)</td></tr>
+<tr><td>Magic Bytes</td><td>0xe3e1f3e8</td></tr>
+</tbody>
+</table>
+
+<h3>Testnet</h3>
+
+<table>
+<thead><tr><th>Parameter</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>P2P Port</td><td>17333</td></tr>
+<tr><td>RPC Port</td><td>17332</td></tr>
+<tr><td>Address Prefix</td><td>m... or n...</td></tr>
+</tbody>
+</table>
+
+<h3>ElectrumX Servers (Mainnet)</h3>
+
+<table>
+<thead><tr><th>Server</th><th>TCP</th><th>SSL</th></tr></thead>
+<tbody>
+<tr><td>electrumx.radiantexplorer.com</td><td>50010</td><td>50012</td></tr>
+<tr><td>electrumx.radiantblockchain.org</td><td>50010</td><td>50012</td></tr>
+<tr><td>electrumx.radiant4people.com</td><td>50010</td><td>50012</td></tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2 id="unique-features">Unique Technical Features</h2>
+
+<h3>1. Reference System</h3>
+
+<p>Radiant's reference system provides unique token identification:</p>
+
+<pre><code>OP_PUSHINPUTREF &lt;36-byte-ref&gt;      # Normal reference (FT)
+OP_PUSHINPUTREFSINGLETON &lt;36-byte-ref&gt;  # Singleton reference (NFT)</code></pre>
+
+<ul>
+<li><strong>Normal References</strong>: Track fungible token supply</li>
+<li><strong>Singleton References</strong>: Ensure NFT uniqueness</li>
+</ul>
+
+<h3>2. Transaction Introspection</h3>
+
+<p>Scripts can inspect their transaction context:</p>
+
+<pre><code>OP_INPUTINDEX          # Current input being evaluated
+OP_TXINPUTCOUNT        # Number of inputs
+OP_TXOUTPUTCOUNT       # Number of outputs
+OP_UTXOVALUE           # Value of a UTXO
+OP_OUTPUTVALUE         # Value of an output
+OP_OUTPUTBYTECODE      # Locking script of an output</code></pre>
+
+<h3>3. State Management</h3>
+
+<p>Contracts can maintain state across transactions:</p>
+
+<pre><code>&lt;state_data&gt;
+OP_STATESEPARATOR
+&lt;code_script&gt;</code></pre>
+
+<h3>4. 64-bit Arithmetic</h3>
+
+<p>Full 64-bit signed integer operations:</p>
+
+<pre><code>OP_MUL    # Multiplication
+OP_DIV    # Division
+OP_MOD    # Modulo</code></pre>
+
+<hr>
+
+<h2 id="comparison">Comparison with Other Blockchains</h2>
+
+<table>
+<thead><tr><th>Feature</th><th>Radiant</th><th>Bitcoin</th><th>Ethereum</th><th>Solana</th></tr></thead>
+<tbody>
+<tr><td>Model</td><td>UTXO</td><td>UTXO</td><td>Account</td><td>Account</td></tr>
+<tr><td>Consensus</td><td>PoW</td><td>PoW</td><td>PoS</td><td>PoS</td></tr>
+<tr><td>Block Time</td><td>5 min</td><td>10 min</td><td>12 sec</td><td>400 ms</td></tr>
+<tr><td>Smart Contracts</td><td>Script</td><td>Script</td><td>EVM</td><td>SVM</td></tr>
+<tr><td>Tokens</td><td>Native (Glyph)</td><td>Ordinals</td><td>ERC-20</td><td>SPL</td></tr>
+<tr><td>Scalability</td><td>On-chain</td><td>Limited</td><td>L2</td><td>On-chain</td></tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2 id="community">Community &amp; Resources</h2>
+
+<h3>Official Channels</h3>
+
+<table>
+<thead><tr><th>Platform</th><th>Link</th></tr></thead>
+<tbody>
+<tr><td>Website</td><td><a href="https://radiantblockchain.org">radiantblockchain.org</a></td></tr>
+<tr><td>Discord</td><td><a href="https://discord.gg/radiantblockchain">discord.gg/radiantblockchain</a></td></tr>
+<tr><td>Telegram</td><td><a href="https://t.me/RadiantBlockchain">t.me/RadiantBlockchain</a></td></tr>
+<tr><td>Twitter/X</td><td><a href="https://x.com/RXD_Community">@RXD_Community</a></td></tr>
+<tr><td>Reddit</td><td><a href="https://www.reddit.com/r/Radiant_RXD">r/Radiant_RXD</a></td></tr>
+</tbody>
+</table>
+
+<h3>Development Resources</h3>
+
+<table>
+<thead><tr><th>Resource</th><th>Link</th></tr></thead>
+<tbody>
+<tr><td>Radiant-Core GitHub</td><td><a href="https://github.com/Radiant-Core">github.com/Radiant-Core</a></td></tr>
+<tr><td>Community GitHub</td><td><a href="https://github.com/RadiantBlockchain-Community">github.com/RadiantBlockchain-Community</a></td></tr>
+<tr><td>REP Proposals</td><td><a href="https://github.com/Radiant-Core/REP">github.com/Radiant-Core/REP</a></td></tr>
+<tr><td>Whitepaper</td><td><a href="https://radiantblockchain.org/radiant.pdf">radiantblockchain.org/radiant.pdf</a></td></tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2 id="roadmap">Roadmap Highlights</h2>
+
+<h3>Completed</h3>
+
+<ul>
+<li>Mainnet launch with SHA512/256 PoW</li>
+<li>Glyph v1 token standard</li>
+<li>Photonic Wallet release</li>
+<li>ElectrumX with RocksDB support</li>
+<li>RadiantScript compiler</li>
+<li><strong>Radiant Core 2.1.0</strong> (February 2026) — V2 Hard Fork: 6 new/re-enabled opcodes, activation at Block 410,000</li>
+<li>Glyph v2 token standard (whitepaper draft-8, Release Candidate)</li>
+<li>Multi-algorithm dMint mining (Blake3, K12 — on-chain PoW validation)</li>
+<li>AI Integration (radiant-mcp-server: 56 MCP tools, REST API, Agent SDK)</li>
+<li>Induction proof support in RadiantScript</li>
+</ul>
+
+<h3>In Progress</h3>
+
+<ul>
+<li>RadiantMM decentralized exchange</li>
+<li>WAVE naming system</li>
+<li>RXinDexer per-holder balance tracking</li>
+</ul>
+
+<h3>Planned</h3>
+
+<ul>
+<li>Mobile SDK development</li>
+<li>Hardware wallet integrations</li>
+<li>Layer 2 scaling solutions</li>
+<li>Cross-chain bridges</li>
+</ul>
+
+<hr>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>Radiant represents a unique approach to blockchain scalability and digital assets. By building on Bitcoin's proven UTXO model while adding native token capabilities and advanced scripting, Radiant enables a new generation of decentralized applications.</p>
+
+<p>Whether you're a user looking to explore digital assets, a miner seeking opportunities, or a developer building the future of finance, Radiant provides the tools and infrastructure you need.</p>
+
+<p><em>For questions and support, join our <a href="https://discord.gg/radiantblockchain">Discord</a> community.</em></p>
+
+    </div>
+
+    <div class="doc-footer">
+        <span><a href="./">← All Docs</a></span>
+        <span>&copy; 2022–2026 Radiant Core Contributors</span>
+    </div>
+</div>
+
+</body>
+</html>

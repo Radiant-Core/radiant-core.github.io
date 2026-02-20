@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>dApp Security Guidelines — Radiant Core Docs</title>
+    <meta name="description" content="Security guidelines for Radiant dApps: key management, transaction security, frontend/backend hardening, API security, user protection, and incident response.">
+    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="stylesheet" href="docs.css">
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="container">
+        <a href="../" class="nav-brand"><img src="../radiant-logo-darkmode.jpg" alt="Radiant"> Radiant Core</a>
+        <button class="hamburger" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Menu">&#9776;</button>
+        <ul class="nav-links">
+            <li><a href="../#features">Features</a></li>
+            <li><a href="../#v2-upgrade">V2 Upgrade</a></li>
+            <li><a href="./" class="nav-active">Docs</a></li>
+            <li><a href="../#ecosystem">Ecosystem</a></li>
+            <li><a href="../#mining">Mining</a></li>
+            <li><a href="../explorer/">Explorer</a></li>
+            <li><a href="https://github.com/Radiant-Core" class="nav-cta">GitHub ↗</a></li>
+        </ul>
+    </div>
+</nav>
+
+<div class="doc-container">
+    <div class="breadcrumb"><a href="./">Docs</a> <span class="sep">/</span> <span>dApp Security Guidelines</span></div>
+
+    <div class="doc-header">
+        <h1>Security Guidelines for Radiant dApps</h1>
+        <div class="doc-meta"><span>Version 1.0</span> <span>Last Updated: February 2026</span></div>
+    </div>
+
+    <nav class="doc-toc">
+        <h3>Contents</h3>
+        <ul>
+            <li><a href="#principles">1. Security Principles</a></li>
+            <li><a href="#key-management">2. Key Management</a></li>
+            <li><a href="#transaction-security">3. Transaction Security</a></li>
+            <li><a href="#frontend">4. Frontend Security</a></li>
+            <li><a href="#backend">5. Backend Security</a></li>
+            <li><a href="#contract-integration">6. Smart Contract Integration</a></li>
+            <li><a href="#api-security">7. API Security</a></li>
+            <li><a href="#user-protection">8. User Protection</a></li>
+            <li><a href="#incident-response">9. Incident Response</a></li>
+            <li><a href="#checklist">10. Security Checklist</a></li>
+        </ul>
+    </nav>
+
+    <div class="doc-content">
+
+<blockquote>
+<p><strong>V2 Hard Fork Note (Radiant Core 2.1):</strong> At block 410,000, six new/re-enabled opcodes activate (OP_BLAKE3, OP_K12, OP_LSHIFT, OP_RSHIFT, OP_2MUL, OP_2DIV). dApps using these opcodes must ensure they are only used in transactions broadcast after the activation height. The minimum relay fee increases to 0.1 RXD/kB after block 415,000. Additionally, <code>OP_PUSH_TX_STATE</code> (0xed) provides access to the current txid, total input sum, and total output sum — useful for fee verification and induction proof contracts.</p>
+</blockquote>
+
+<hr>
+
+<h2 id="principles">1. Security Principles</h2>
+
+<h3>1.1 Defense in Depth</h3>
+<p>Never rely on a single security control. Layer multiple defenses:</p>
+<pre class="diagram"><code>┌───────────────────────────────────────────┐
+│              USER INTERFACE                │
+│  ┌───────────────────────────────────────┐│
+│  │          INPUT VALIDATION              ││
+│  │  ┌───────────────────────────────────┐││
+│  │  │       AUTHENTICATION               │││
+│  │  │  ┌───────────────────────────────┐│││
+│  │  │  │     AUTHORIZATION              ││││
+│  │  │  │  ┌───────────────────────────┐││││
+│  │  │  │  │   SMART CONTRACT          │││││
+│  │  │  │  │  ┌───────────────────────┐│││││
+│  │  │  │  │  │       FUNDS           ││││││
+│  │  │  │  │  └───────────────────────┘│││││
+│  │  │  │  └───────────────────────────┘││││
+│  │  │  └───────────────────────────────┘│││
+│  │  └───────────────────────────────────┘││
+│  └───────────────────────────────────────┘│
+└───────────────────────────────────────────┘</code></pre>
+
+<h3>1.2 Principle of Least Privilege</h3>
+<pre><code>// ✅ GOOD: Request only needed permissions
+const permissions = {
+  viewBalance: true,
+  signTransactions: true,
+  // NOT: fullWalletAccess: true
+};
+
+// ✅ GOOD: Limit transaction scope
+const txLimits = {
+  maxAmount: 1000000,  // 0.01 RXD max per tx
+  allowedAddresses: ['1Known...', '1Trusted...'],
+  requireConfirmation: true
+};</code></pre>
+
+<h3>1.3 Fail Securely</h3>
+<pre><code>// ✅ GOOD: Fail securely — don't expose internal details
+async function processTransaction(tx) {
+  try {
+    await validateTransaction(tx);
+    await signTransaction(tx);
+    await broadcastTransaction(tx);
+  } catch (error) {
+    logger.error('Transaction failed', { txid: tx.id, error: error.message });
+    throw new UserFacingError('Transaction could not be completed.');
+  }
+}
+
+// ❌ BAD: Expose internal state
+catch (error) {
+  throw new Error(`Failed: ${error.stack} - DB: ${dbConnection}`);
+}</code></pre>
+
+<h3>1.4 Trust Nothing</h3>
+<pre><code>// ✅ GOOD: Validate everything — even from "trusted" sources
+function processElectrumResponse(response) {
+  if (!isValidElectrumResponse(response)) throw new Error('Invalid response');
+  if (!isValidTxHex(response.tx)) throw new Error('Invalid tx hex');
+  if (response.amount &lt; 0 || response.amount > MAX_SUPPLY) throw new Error('Invalid amount');
+  return sanitize(response);
+}</code></pre>
+
+<hr>
+
+<h2 id="key-management">2. Key Management</h2>
+
+<h3>2.1 Never Store Private Keys in Plain Text</h3>
+<pre><code>// ❌ NEVER
+localStorage.setItem('privateKey', privateKey.toWIF());
+
+// ✅ GOOD: Encrypted storage with user password
+async function storeKey(privateKey, password) {
+  const salt = crypto.getRandomValues(new Uint8Array(32));
+  const key = await deriveKey(password, salt);
+  const encrypted = await encrypt(privateKey.toWIF(), key);
+  await secureStorage.set('encryptedKey', { encrypted, salt });
+}</code></pre>
+
+<h3>2.2 Use Secure Key Derivation</h3>
+<pre><code>// ✅ GOOD: BIP39/BIP44 derivation
+function deriveKeys(mnemonic, accountIndex = 0) {
+  const seed = Mnemonic.fromPhrase(mnemonic);
+  const hdKey = seed.toHDPrivateKey();
+  const path = `m/44'/0'/${accountIndex}'/0`;
+  const account = hdKey.deriveChild(path);
+  return {
+    addresses: Array.from({ length: 20 }, (_, i) =>
+      account.deriveChild(i).publicKey.toAddress()
+    )
+  };
+}</code></pre>
+
+<h3>2.3 Secure Memory Handling</h3>
+<pre><code>// ✅ GOOD: Clear sensitive data from memory
+class SecureKey {
+  constructor(key) { this.keyBuffer = Buffer.from(key); }
+
+  destroy() {
+    crypto.getRandomValues(this.keyBuffer);  // Overwrite with random
+    this.keyBuffer = new Uint8Array(0);
+  }
+
+  static async withKey(key, fn) {
+    const secureKey = new SecureKey(key);
+    try { return await fn(secureKey); }
+    finally { secureKey.destroy(); }
+  }
+}</code></pre>
+
+<hr>
+
+<h2 id="transaction-security">3. Transaction Security</h2>
+
+<h3>3.1 Validate Before Signing</h3>
+<pre><code>async function validateBeforeSigning(tx) {
+  // 1. Validate addresses
+  for (const output of tx.outputs) {
+    if (!Address.isValid(output.address)) throw new Error('Invalid address');
+    if (await isBlacklisted(output.address)) throw new Error('Blacklisted address');
+  }
+
+  // 2. Validate amounts
+  const totalOutput = tx.outputs.reduce((sum, o) => sum + o.value, 0);
+  const totalInput = tx.inputs.reduce((sum, i) => sum + i.value, 0);
+  if (totalOutput > totalInput) throw new Error('Output exceeds input');
+
+  // 3. Validate fee
+  const fee = totalInput - totalOutput;
+  const feeRate = fee / tx.getSize();
+  if (feeRate > MAX_REASONABLE_FEE_RATE) throw new Error('Unreasonably high fee');
+  if (fee &lt; MIN_FEE) throw new Error('Fee too low');
+
+  // 4. Check for dust
+  for (const output of tx.outputs) {
+    if (output.value > 0 &amp;&amp; output.value &lt; DUST_LIMIT) throw new Error('Dust output');
+  }
+}</code></pre>
+
+<h3>3.2 User Confirmation</h3>
+<pre><code>// ✅ Always show transaction details before signing
+async function confirmTransaction(tx) {
+  const details = {
+    recipientAddress: formatAddress(tx.outputs[0].address),
+    amount: formatAmount(tx.outputs[0].value),
+    fee: formatAmount(tx.getFee()),
+    warnings: []
+  };
+
+  if (tx.outputs[0].value > LARGE_TX_THRESHOLD)
+    details.warnings.push('Large transaction amount');
+  if (tx.getFee() > HIGH_FEE_THRESHOLD)
+    details.warnings.push('Higher than normal fee');
+  if (!await isKnownAddress(tx.outputs[0].address))
+    details.warnings.push('First time sending to this address');
+
+  return await showConfirmationDialog(details);
+}</code></pre>
+
+<h3>3.3 Prevent Double-Spending</h3>
+<pre><code>class UTXOManager {
+  private pendingUtxos = new Set();
+
+  async getAvailableUTXOs(address) {
+    const allUtxos = await electrum.listUnspent(address);
+    return allUtxos.filter(utxo => !this.pendingUtxos.has(`${utxo.txid}:${utxo.vout}`));
+  }
+
+  markAsPending(utxo) { this.pendingUtxos.add(`${utxo.txid}:${utxo.vout}`); }
+}</code></pre>
+
+<hr>
+
+<h2 id="frontend">4. Frontend Security</h2>
+
+<h3>4.1 Content Security Policy</h3>
+<pre><code>&lt;meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self' 'wasm-unsafe-eval';
+  style-src 'self' 'unsafe-inline';
+  connect-src 'self' wss://electrumx.radiantexplorer.com:*;
+  img-src 'self' data: https:;
+  object-src 'none';
+  frame-ancestors 'none';
+  upgrade-insecure-requests;
+"&gt;</code></pre>
+
+<h3>4.2 XSS Prevention</h3>
+<pre><code>// ✅ GOOD: Sanitize all user input before display
+import DOMPurify from 'dompurify';
+function displayUserContent(content) {
+  return DOMPurify.sanitize(content, { ALLOWED_TAGS: [] });
+}
+
+// ❌ BAD: Dangerous innerHTML
+element.innerHTML = userProvidedContent;</code></pre>
+
+<h3>4.3 Clipboard Security</h3>
+<pre><code>async function copyToClipboard(text, type) {
+  await navigator.clipboard.writeText(text);
+  if (type === 'seed') {
+    setTimeout(async () => await navigator.clipboard.writeText(''), 60000);
+    showWarning('Seed phrase copied. Clipboard will be cleared in 60 seconds.');
+  }
+}</code></pre>
+
+<hr>
+
+<h2 id="backend">5. Backend Security</h2>
+
+<h3>5.1 API Authentication &amp; Rate Limiting</h3>
+<pre><code>// JWT with proper validation
+function verifyToken(token) {
+  return jwt.verify(token, JWT_SECRET, {
+    issuer: 'radiant-dapp', audience: 'radiant-dapp-api',
+    algorithms: ['HS256'], maxAge: '1h'
+  });
+}
+
+// Rate limiting
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, max: 100,
+  message: 'Too many requests'
+});
+app.use('/api/', apiLimiter);</code></pre>
+
+<h3>5.2 Input Validation</h3>
+<pre><code>const transactionSchema = Joi.object({
+  recipientAddress: Joi.string()
+    .pattern(/^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/).required(),
+  amount: Joi.number().integer().min(546).max(2100000000000000).required(),
+  memo: Joi.string().max(256).optional()
+});</code></pre>
+
+<h3>5.3 Database Security</h3>
+<pre><code>// ✅ GOOD: Parameterized queries
+const result = await db.query('SELECT * FROM transactions WHERE address = $1', [address]);
+
+// ❌ BAD: SQL injection
+const result = await db.query(`SELECT * FROM transactions WHERE address = '${address}'`);</code></pre>
+
+<h3>5.4 Secrets Management</h3>
+<pre><code>// ✅ GOOD: Environment-based secrets — fail if missing
+function requireEnv(name) {
+  const value = process.env[name];
+  if (!value) throw new Error(`Required env var ${name} is not set`);
+  return value;
+}
+
+const config = {
+  jwtSecret: requireEnv('JWT_SECRET'),
+  dbPassword: requireEnv('DB_PASSWORD'),
+};</code></pre>
+
+<hr>
+
+<h2 id="contract-integration">6. Smart Contract Integration</h2>
+
+<h3>6.1 Verify Contract Code</h3>
+<pre><code>async function verifyContract(contractOutput, expectedTemplate) {
+  const codeScript = extractCodeScript(contractOutput.script);
+  const expectedCode = expectedTemplate.generateCode(parseContractParams(contractOutput.script));
+  if (!codeScript.equals(expectedCode)) throw new Error('Contract code mismatch');
+  return true;
+}</code></pre>
+
+<h3>6.2 Simulate Before Executing</h3>
+<pre><code>async function executeContractCall(contract, functionName, args) {
+  const tx = await contract.functions[functionName](...args);
+  const simulation = await simulateTransaction(tx);
+  if (!simulation.success) throw new Error(`Simulation failed: ${simulation.error}`);
+  const confirmed = await confirmTransaction(tx, simulation);
+  if (!confirmed) throw new Error('User cancelled');
+  return await signAndBroadcast(tx);
+}</code></pre>
+
+<hr>
+
+<h2 id="api-security">7. API Security</h2>
+
+<h3>7.1 ElectrumX Connection Security</h3>
+<pre><code>class SecureElectrumClient {
+  async connect(host, port) {
+    const url = `wss://${host}:${port}`;  // Use WSS (secure)
+    this.ws = new WebSocket(url);
+    // Verify server certificate on upgrade...
+  }
+
+  async request(method, params) {
+    const id = this.nextId++;
+    const response = await this.sendAndWait({ jsonrpc: '2.0', id, method, params });
+    if (response.id !== id) throw new Error('Response ID mismatch');
+    return response.result;
+  }
+}</code></pre>
+
+<hr>
+
+<h2 id="user-protection">8. User Protection</h2>
+
+<h3>8.1 Phishing Prevention</h3>
+<pre><code>const OFFICIAL_DOMAINS = ['photonic.radiant4people.com', 'localhost'];
+
+function verifyDomain() {
+  if (!OFFICIAL_DOMAINS.includes(window.location.hostname)) {
+    showPhishingWarning(window.location.hostname);
+    disableWalletOperations();
+  }
+}
+window.addEventListener('load', verifyDomain);</code></pre>
+
+<h3>8.2 Transaction Warnings</h3>
+<pre><code>const warnings = {
+  largeAmount: (amount) => amount > 10000000000 ? 'Large transaction (>100 RXD)' : null,
+  newAddress: async (address) => !await hasTransactionHistory(address) ? 'New address' : null,
+  highFee: (feeRate) => feeRate > 10 ? 'Fee is higher than typical' : null,
+  contractInteraction: (script) => isComplexScript(script) ? 'Involves a smart contract' : null,
+  burnWarning: (outputs) => outputs.some(o => o.value === 0) ? 'May burn tokens' : null
+};</code></pre>
+
+<hr>
+
+<h2 id="incident-response">9. Incident Response</h2>
+
+<h3>Response Plan</h3>
+
+<p><strong>Immediate (0-1 hour):</strong></p>
+<ul>
+<li>Identify scope of incident</li>
+<li>Disable affected functionality if necessary</li>
+<li>Notify core team members</li>
+<li>Begin documenting timeline</li>
+</ul>
+
+<p><strong>Short-term (1-24 hours):</strong></p>
+<ul>
+<li>Communicate with affected users</li>
+<li>Implement temporary mitigations</li>
+<li>Preserve evidence and logs</li>
+<li>Begin root cause analysis</li>
+</ul>
+
+<p><strong>Resolution (24-72 hours):</strong></p>
+<ul>
+<li>Deploy permanent fix</li>
+<li>Verify fix effectiveness</li>
+<li>Restore normal operations</li>
+<li>Complete incident report</li>
+</ul>
+
+<p><strong>Post-Incident:</strong></p>
+<ul>
+<li>Conduct post-mortem</li>
+<li>Update security practices</li>
+<li>Communicate lessons learned</li>
+<li>Implement preventive measures</li>
+</ul>
+
+<hr>
+
+<h2 id="checklist">10. Security Checklist</h2>
+
+<h3>Development Phase</h3>
+<ul>
+<li><strong>Key Management:</strong> No plain text keys, BIP39/BIP44 derivation, memory clearing, hardware wallet support</li>
+<li><strong>Transactions:</strong> Pre-sign validation, user confirmation, fee validation, dust prevention</li>
+<li><strong>Frontend:</strong> CSP configured, XSS prevention, secure clipboard, data cleared on logout</li>
+<li><strong>Backend:</strong> API authentication, rate limiting, input validation, environment-based secrets</li>
+</ul>
+
+<h3>Pre-Launch</h3>
+<ul>
+<li>Security-focused code review completed</li>
+<li>Penetration testing performed</li>
+<li>Smart contract audit completed (if applicable)</li>
+<li>Fuzz testing conducted</li>
+<li>Incident response plan created</li>
+<li>Vulnerability disclosure process defined</li>
+</ul>
+
+<h3>Post-Launch</h3>
+<ul>
+<li>Security monitoring active</li>
+<li>Alert thresholds configured</li>
+<li>Dependencies regularly updated</li>
+<li>Security patches applied promptly</li>
+<li>Backup procedures tested</li>
+</ul>
+
+<hr>
+
+<h2 id="resources">Resources</h2>
+<ul>
+<li><a href="https://www.zaproxy.org/">OWASP ZAP</a> — Web app security scanner</li>
+<li><a href="https://snyk.io/">Snyk</a> — Dependency vulnerability scanning</li>
+<li><a href="https://owasp.org/www-project-top-ten/">OWASP Top 10</a></li>
+<li><a href="contract-best-practices.html">Radiant Contract Best Practices</a></li>
+</ul>
+
+<h3>Reporting Vulnerabilities</h3>
+<p>Email: <strong>info@radiantfoundation.org</strong><br>Subject: <code>[SECURITY] dApp Name - Brief Description</code></p>
+
+<p><em>Security is everyone's responsibility. When in doubt, ask for review.</em></p>
+
+    </div>
+    <div class="doc-footer">
+        <span><a href="./">← All Docs</a></span>
+        <span>&copy; 2022–2026 Radiant Core Contributors</span>
+    </div>
+</div>
+</body>
+</html>
