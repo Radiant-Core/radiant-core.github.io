@@ -287,6 +287,48 @@
         .ticker-card .tc-exchange { font-size: 0.78rem; color: var(--text-muted); }
         .ticker-card .tc-price { font-weight: 700; color: var(--green); }
         .ticker-card .tc-vol { font-size: 0.78rem; color: var(--text-muted); }
+
+        /* ADDRESS ACTIVITY */
+        .addr-hero { background: linear-gradient(135deg, rgba(56,189,248,0.06), rgba(52,211,153,0.06)); border: 1px solid var(--border); border-radius: 12px; padding: 28px; margin-bottom: 24px; }
+        .addr-hero h2 { font-size: 1.3rem; margin-bottom: 8px; }
+        .addr-hero p { color: var(--text-muted); font-size: 0.88rem; margin-bottom: 16px; max-width: 640px; }
+        .addr-input-wrap { display: flex; gap: 8px; max-width: 640px; }
+        .addr-input-wrap input { flex: 1; padding: 10px 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 0.92rem; outline: none; }
+        .addr-input-wrap input:focus { border-color: var(--accent); }
+        .addr-input-wrap input::placeholder { color: var(--text-muted); }
+        .addr-hint { font-size: 0.78rem; color: var(--text-muted); margin-top: 8px; }
+        .addr-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px; }
+        .addr-summary-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; text-align: center; }
+        .addr-summary-card .label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-muted); margin-bottom: 4px; }
+        .addr-summary-card .value { font-size: 1.1rem; font-weight: 700; color: var(--accent); }
+        .addr-summary-card .value.green { color: var(--green); }
+        .addr-summary-card .value.orange { color: var(--orange); }
+        .addr-summary-card .value.purple { color: var(--purple); }
+        .addr-timeline { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+        .addr-tx-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border); transition: background 0.15s; }
+        .addr-tx-item:last-child { border-bottom: none; }
+        .addr-tx-item:hover { background: var(--surface-hover); }
+        .addr-tx-dir { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; font-size: 0.9rem; font-weight: 700; flex-shrink: 0; }
+        .addr-tx-dir.received { background: rgba(52,211,153,0.12); color: var(--green); }
+        .addr-tx-dir.sent { background: rgba(248,113,113,0.12); color: var(--red); }
+        .addr-tx-dir.mined { background: rgba(251,191,36,0.12); color: var(--yellow); }
+        .addr-tx-dir.related, .addr-tx-dir.unknown { background: rgba(148,163,184,0.12); color: var(--text-muted); }
+        .addr-tx-main { flex: 1; min-width: 0; }
+        .addr-tx-txid { font-family: "SF Mono", monospace; font-size: 0.82rem; }
+        .addr-tx-txid a { color: var(--accent); }
+        .addr-tx-meta { font-size: 0.76rem; color: var(--text-muted); margin-top: 2px; }
+        .addr-tx-amount { font-weight: 700; font-size: 0.88rem; white-space: nowrap; }
+        .addr-tx-amount.received { color: var(--green); }
+        .addr-tx-amount.sent { color: var(--red); }
+        .addr-tx-amount.mined { color: var(--yellow); }
+        .addr-tx-token { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 0.68rem; background: rgba(167,139,250,0.12); color: var(--purple); margin-left: 4px; }
+        .addr-load-more { text-align: center; padding: 16px; }
+        .addr-token-holdings { margin-bottom: 20px; }
+        .addr-token-holdings h3 { font-size: 0.92rem; margin-bottom: 10px; color: var(--text-muted); }
+        .addr-token-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 20px; margin: 0 6px 6px 0; font-size: 0.8rem; cursor: pointer; transition: border-color 0.2s; }
+        .addr-token-chip:hover { border-color: var(--accent); }
+        .addr-token-chip .chip-name { font-weight: 600; }
+        .addr-token-chip .chip-amt { color: var(--text-muted); font-size: 0.76rem; }
     </style>
 </head>
 <body>
@@ -311,6 +353,7 @@
             <li><a href="#/dmint" data-nav="dmint">dMint</a></li>
             <li><a href="#/mempool" data-nav="mempool">Mempool</a></li>
             <li><a href="#/wave" data-nav="wave">WAVE</a></li>
+            <li><a href="#/address" data-nav="address">Address</a></li>
         </ul>
         <div class="nav-right">
             <button class="btn-icon" onclick="showSettings()" title="API Settings">&#x2699;&#xfe0f;</button>
@@ -400,6 +443,8 @@ const API = {
     waveStats: () => api('/wave/stats'),
     mempoolStats: () => api('/mempool/stats'),
     mempoolInfo: () => api('/mempool/info'),
+    addressHistory: (ident, limit = 25, offset = 0) => api(`/addresses/${encodeURIComponent(ident)}/history?limit=${limit}&offset=${offset}`, 30000),
+    addressGlyphs: (ident, limit = 100, cursor = null) => api(`/addresses/${encodeURIComponent(ident)}/glyphs?limit=${limit}${cursor ? `&cursor=${cursor}` : ''}`),
 };
 
 // ─── COINGECKO ───
@@ -564,6 +609,7 @@ async function route() {
             case 'dmint': await renderDmint(); break;
             case 'mempool': await renderMempool(); break;
             case 'wave': await renderWave(); break;
+            case 'address': await renderAddressActivity(r.param); break;
             case 'search': await renderSearch(decodeURIComponent(r.param)); break;
             case 'settings': renderSettings(); break;
             default: app.innerHTML = errorBox('Page Not Found', 'The requested page does not exist.');
@@ -1635,6 +1681,11 @@ async function renderSearch(query) {
         sections += `<div class="search-section"><h3>Transaction</h3><a href="#/tx/${query}" class="btn btn-secondary btn-sm">View Transaction ${truncHash(query)}</a></div>`;
     }
 
+    // Radiant address — link to address activity
+    if (/^r1[a-zA-Z0-9]{20,}$/.test(query)) {
+        sections += `<div class="search-section"><h3>Address</h3><a href="#/address/${encodeURIComponent(query)}" class="btn btn-secondary btn-sm">View Address Activity ${truncHash(query, 12)}</a></div>`;
+    }
+
     if (/^[a-fA-F0-9]{72}$/i.test(query)) {
         sections += `<div class="search-section"><h3>Token Reference</h3><a href="#/token/${query}" class="btn btn-secondary btn-sm">View Token ${truncHash(query)}</a></div>`;
     }
@@ -1687,6 +1738,140 @@ async function renderSearch(query) {
 
     if (!sections) sections = emptyState('&#x1f50d;', `No results found for "${escHTML(query)}"`);
     app.innerHTML = `<h1 class="page-title">Search Results <span class="subtitle">for "${escHTML(query)}"</span></h1>${sections}`;
+}
+
+// ─── ADDRESS ACTIVITY ───
+let _addrState = null;
+
+async function renderAddressActivity(param) {
+    _addrState = null;
+    let initialAddr = '';
+    if (param) initialAddr = decodeURIComponent(param);
+
+    app.innerHTML = `
+        <div class="breadcrumb"><a href="#/">Home</a> / Address Activity</div>
+        <h1 class="page-title">Address Activity <span class="subtitle">On-chain history timeline</span></h1>
+        <div class="addr-hero">
+            <h2>&#x1f50e; Transaction History</h2>
+            <p>Enter a Radiant address or 64-hex scripthash to see its full on-chain activity: incoming/outgoing transactions, mining rewards, and token holdings.</p>
+            <div class="addr-input-wrap">
+                <input type="text" id="addrInput" placeholder="r1address... or 64-hex scripthash" autocomplete="off" value="${escHTML(initialAddr)}">
+                <button class="btn btn-primary" onclick="loadAddressActivity()">Search</button>
+            </div>
+            <div class="addr-hint">Example: <code>r1QqyVwN3PZcXhLjmYxqWdHxFGhVj9P5Di</code></div>
+        </div>
+        <div id="addrResult"></div>`;
+
+    const input = document.getElementById('addrInput');
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') loadAddressActivity();
+    });
+    if (initialAddr) {
+        loadAddressActivity();
+    } else {
+        input.focus();
+    }
+}
+
+async function loadAddressActivity(offset = 0) {
+    const input = document.getElementById('addrInput');
+    if (!input) return;
+    const ident = input.value.trim();
+    if (!ident) return;
+
+    const resultDiv = document.getElementById('addrResult');
+    if (!resultDiv) return;
+
+    if (offset === 0) {
+        _addrState = { ident, offset: 0, history: [] };
+        resultDiv.innerHTML = loading();
+    } else {
+        const loadMore = document.getElementById('addrLoadMore');
+        if (loadMore) loadMore.innerHTML = '<div class="loading"><div class="spinner" style="width:20px;height:20px"></div></div>';
+    }
+
+    try {
+        const data = await API.addressHistory(ident, 25, offset);
+        if (offset === 0) _addrState = { ident, offset: 0, history: [] };
+        _addrState.history = _addrState.history.concat(data.history || []);
+        _addrState.offset = offset + (data.count || 0);
+        _addrState.hasMore = data.has_more;
+        _addrState.address = data.address;
+        _addrState.scripthash = data.scripthash;
+        renderAddressResult(data, offset === 0);
+    } catch (e) {
+        resultDiv.innerHTML = errorBox('Failed to load address history', e.message);
+    }
+}
+
+function renderAddressResult(data, isFresh) {
+    const resultDiv = document.getElementById('addrResult');
+    if (!resultDiv) return;
+    const s = _addrState;
+    const history = s.history;
+    const addr = s.address || s.ident;
+
+    // Summary stats
+    let received = 0, sent = 0, mined = 0, txCount = history.length;
+    for (const tx of history) {
+        if (tx.direction === 'received') received += tx.amount;
+        else if (tx.direction === 'sent') sent += tx.amount;
+        else if (tx.direction === 'mined') mined += tx.amount;
+    }
+
+    let html = `
+        <div class="addr-summary">
+            <div class="addr-summary-card"><div class="label">Address</div><div class="value" style="font-size:0.82rem;font-family:'SF Mono',monospace">${truncHash(addr, 16)}</div></div>
+            <div class="addr-summary-card"><div class="label">Txs Shown</div><div class="value">${fmtNum(txCount)}</div></div>
+            <div class="addr-summary-card"><div class="label">Received</div><div class="value green">${fmtRXD(received * 1e8)}</div></div>
+            <div class="addr-summary-card"><div class="label">Sent</div><div class="value orange">${fmtRXD(sent * 1e8)}</div></div>
+            ${mined > 0 ? `<div class="addr-summary-card"><div class="label">Mined</div><div class="value" style="color:var(--yellow)">${fmtRXD(mined * 1e8)}</div></div>` : ''}
+        </div>`;
+
+    // Copy address button
+    html += `<div style="margin-bottom:16px;display:flex;gap:8px;align-items:center">
+        <span class="mono" style="font-size:0.78rem;color:var(--text-muted)">${escHTML(addr)}</span>
+        ${copyBtn(addr)}
+    </div>`;
+
+    // Timeline
+    if (!history.length) {
+        html += emptyState('&#x1f4ed;', 'No transaction history found for this address.');
+    } else {
+        html += '<div class="addr-timeline">';
+        for (const tx of history) {
+            const dirIcon = tx.direction === 'received' ? '&#x2193;' :
+                           tx.direction === 'sent' ? '&#x2191;' :
+                           tx.direction === 'mined' ? '&#x26a1;' :
+                           '&#x2194;';
+            const dirClass = tx.direction || 'unknown';
+            const amtClass = tx.direction === 'received' ? 'received' :
+                            tx.direction === 'sent' ? 'sent' :
+                            tx.direction === 'mined' ? 'mined' : '';
+            const amtPrefix = tx.direction === 'received' ? '+' :
+                             tx.direction === 'sent' ? '-' :
+                             tx.direction === 'mined' ? '+' : '';
+            const tokenBadge = tx.token_refs && tx.token_refs.length ? `<span class="addr-tx-token">${tx.token_refs.length} token${tx.token_refs.length > 1 ? 's' : ''}</span>` : '';
+            const timeStr = tx.timestamp ? timeAgo(tx.timestamp) : '';
+            const confStr = tx.height > 0 ? `Block ${fmtNum(tx.height)}` : 'Unconfirmed';
+
+            html += `<div class="addr-tx-item">
+                <div class="addr-tx-dir ${dirClass}">${dirIcon}</div>
+                <div class="addr-tx-main">
+                    <div class="addr-tx-txid"><a href="#/tx/${tx.txid}">${truncHash(tx.txid, 16)}</a>${tokenBadge}</div>
+                    <div class="addr-tx-meta">${confStr}${timeStr ? ' &middot; ' + timeStr : ''}${tx.vin_count ? ' &middot; ' + tx.vin_count + ' in / ' + tx.vout_count + ' out' : ''}</div>
+                </div>
+                <div class="addr-tx-amount ${amtClass}">${amtPrefix}${fmtRXD(tx.amount * 1e8)}</div>
+            </div>`;
+        }
+        html += '</div>';
+
+        if (s.hasMore) {
+            html += `<div class="addr-load-more" id="addrLoadMore"><button class="btn btn-secondary" onclick="loadAddressActivity(${s.offset})">Load More</button></div>`;
+        }
+    }
+
+    resultDiv.innerHTML = html;
 }
 
 // ─── SETTINGS ───
