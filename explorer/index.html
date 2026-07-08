@@ -1825,9 +1825,9 @@ function renderAddressResult(data, isFresh) {
             <div class="addr-summary-card"><div class="label">Address</div><div class="value" style="font-size:0.82rem;font-family:'SF Mono',monospace">${truncHash(addr, 16)}</div></div>
             <div class="addr-summary-card"><div class="label">Total Txs</div><div class="value">${fmtNum(s.totalCount || txCount)}</div></div>
             <div class="addr-summary-card"><div class="label">Shown</div><div class="value">${fmtNum(txCount)}</div></div>
-            <div class="addr-summary-card"><div class="label">Received</div><div class="value green">${fmtRXD(received * 1e8)}</div></div>
-            <div class="addr-summary-card"><div class="label">Sent</div><div class="value orange">${fmtRXD(sent * 1e8)}</div></div>
-            ${mined > 0 ? `<div class="addr-summary-card"><div class="label">Mined</div><div class="value" style="color:var(--yellow)">${fmtRXD(mined * 1e8)}</div></div>` : ''}
+            <div class="addr-summary-card"><div class="label">Received (loaded)</div><div class="value green">${fmtRXD(received * 1e8)}</div></div>
+            <div class="addr-summary-card"><div class="label">Sent (loaded)</div><div class="value orange">${fmtRXD(sent * 1e8)}</div></div>
+            ${mined > 0 ? `<div class="addr-summary-card"><div class="label">Mined (loaded)</div><div class="value" style="color:var(--yellow)">${fmtRXD(mined * 1e8)}</div></div>` : ''}
         </div>`;
 
     // Copy address button
