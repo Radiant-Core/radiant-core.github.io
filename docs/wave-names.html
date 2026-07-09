@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WAVE Names — Radiant Core Docs</title>
-    <meta name="description" content="WAVE names are human-readable names on Radiant backed by mutable Glyph NFTs. Learn how first-registration-wins works, how to register, how to resolve a name to an address in code, and the REST API reference.">
+    <title>Radiant Name Service (RNS) — WAVE Names — Radiant Core Docs</title>
+    <meta name="description" content="Radiant Name Service (RNS / WAVE Names) — human-readable .rxd names on Radiant backed by mutable Glyph NFTs. Claim in Photonic Wallet, manage DNS at rxd.zone, resolve with wave-resolver.js. First-registration-wins, REST API reference.">
     <link rel="icon" type="image/x-icon" href="../favicon.ico">
     <link rel="stylesheet" href="docs.css">
 </head>
@@ -30,8 +30,8 @@
     <div class="breadcrumb"><a href="./">Docs</a> <span class="sep">/</span> <span>WAVE Names</span></div>
 
     <div class="doc-header">
-        <h1>WAVE Names: Human-Readable Names on Radiant</h1>
-        <div class="doc-meta"><span>Version 1.0</span> <span>Last Updated: June 2026</span></div>
+        <h1>Radiant Name Service (RNS): WAVE Names on Radiant</h1>
+        <div class="doc-meta"><span>Version 1.1</span> <span>Last Updated: July 2026</span></div>
     </div>
 
     <nav class="doc-toc">
@@ -40,9 +40,10 @@
             <li><a href="#what">1. What Are WAVE Names?</a></li>
             <li><a href="#first-reg">2. First-Registration-Wins</a></li>
             <li><a href="#register">3. Registering a Name</a></li>
-            <li><a href="#resolve-code">4. Resolving a Name in Code</a></li>
-            <li><a href="#api">5. REST API Reference</a></li>
-            <li><a href="#faq">6. Notes &amp; FAQ</a></li>
+            <li><a href="#rxd-zone">4. DNS Management at rxd.zone</a></li>
+            <li><a href="#resolve-code">5. Resolving a Name in Code</a></li>
+            <li><a href="#api">6. REST API Reference</a></li>
+            <li><a href="#faq">7. Notes &amp; FAQ</a></li>
         </ul>
     </nav>
 
@@ -62,7 +63,7 @@
 </ul>
 
 <div class="callout callout-info">
-<strong>Already in production.</strong> WAVE names power addressing and profiles inside <a href="https://photonic-wallet.com/">Photonic Wallet</a> and GlyphGalaxy. This page documents the public resolution flow so <em>any</em> dapp can integrate name lookup with a copy-paste snippet.
+<strong>Already in production.</strong> WAVE names (also called the <strong>Radiant Name Service</strong> or <strong>RNS</strong>) power addressing and profiles inside <a href="https://photonic-wallet.com/">Photonic Wallet</a> and GlyphGalaxy. DNS record management is available at <a href="https://rxd.zone">rxd.zone</a>. This page documents the public resolution flow so <em>any</em> dapp can integrate name lookup with a copy-paste snippet.
 </div>
 
 <h2 id="first-reg">2. First-Registration-Wins</h2>
@@ -88,7 +89,24 @@
 
 <p>Once the registration transaction confirms and the indexer ingests it, the name resolves through the public API immediately — no extra publishing step.</p>
 
-<h2 id="resolve-code">4. Resolving a Name in Code</h2>
+<h2 id="rxd-zone">4. DNS Management at rxd.zone</h2>
+
+<p>Once you own a WAVE name, you can manage real DNS records for it at <a href="https://rxd.zone"><strong>rxd.zone</strong></a>. This lets verified name owners point their <code>.rxd.zone</code> subdomain at hosting providers like GitHub Pages, Vercel, or Netlify with a CNAME record — and get a real SSL certificate, no shared registrar required.</p>
+
+<div class="callout callout-info">
+<strong>How it works.</strong> Connect your wallet at <a href="https://rxd.zone">rxd.zone</a>, verify that you own the WAVE name, then add DNS records (CNAME, A, TXT, etc.) for <code>yourname.rxd.zone</code>. The zone records are served publicly, so any browser or tool that does a normal DNS lookup can resolve them.
+</div>
+
+<p>Example: if you own <code>bob.rxd</code>, you can set up:</p>
+<ul>
+<li><code>bob.rxd.zone</code> → CNAME to your GitHub Pages site</li>
+<li><code>www.bob.rxd.zone</code> → CNAME to your Vercel deployment</li>
+<li><code>test.bob.rxd.zone</code> → A record to your test server</li>
+</ul>
+
+<p><a href="https://rxd.zone" class="btn btn-primary" style="display:inline-block;padding:10px 24px;border-radius:8px;background:var(--accent-dim);color:#fff;font-weight:600;text-decoration:none;">Go to rxd.zone ↗</a></p>
+
+<h2 id="resolve-code">5. Resolving a Name in Code</h2>
 
 <p>You don't need to parse any on-chain data yourself. Drop the dependency-free <a href="wave-resolver.js">wave-resolver.js</a> module into your dapp. It calls the public <a href="https://github.com/Radiant-Core/RXinDexer">RXinDexer</a> REST API and returns a plain <code>{ address, ref, owner }</code> object (or <code>null</code> if the name is unregistered). It works in any environment with a global <code>fetch</code> — modern browsers, Deno, and Node.js 18+.</p>
 
@@ -171,7 +189,7 @@ if (await isWaveAvailable('myhandle')) {
 <div class="callout callout-info">
 <strong>Module exports.</strong> <a href="wave-resolver.js">wave-resolver.js</a> exports <code>resolveWaveName(name, apiBase?)</code>, <code>isWaveAvailable(name, apiBase?)</code>, <code>listWaveNames(apiBase?, pageSize?)</code> (async iterator), the <code>normalizeWaveName(name)</code> helper, and the <code>DEFAULT_API_BASE</code> constant. Pass your own indexer's base URL as <code>apiBase</code> to self-host resolution.</div>
 
-<h2 id="api">5. REST API Reference</h2>
+<h2 id="api">6. REST API Reference</h2>
 
 <p>All endpoints are served by the public <a href="https://github.com/Radiant-Core/RXinDexer">RXinDexer</a> instance under the base URL <code>https://radiantcore.org/api</code>. They are <code>GET</code>-only, return JSON, and require no authentication. If you run your own indexer, point <code>apiBase</code> at it instead.</p>
 
@@ -265,7 +283,7 @@ for await (const name of listWaveNames()) {
 <p>The public API is rate-limited to <strong>600 requests per minute per IP</strong> (10/s, burst 600); going over returns <code>HTTP 429</code>. That's generous for normal use — you typically resolve one name per payment — so as long as you resolve on demand rather than hammering the endpoint, you'll never come close. If you run a high-traffic backend, resolve server-side and cache for the duration of a payment flow, or point <code>apiBase</code> at your own <a href="https://github.com/Radiant-Core/RXinDexer">RXinDexer</a> instance.</p>
 <p>The <code>/wave/*</code> endpoints are meant to be called from the browser from any origin. If a browser <code>fetch</code> fails with a CORS error while the exact same URL works in <code>curl</code> or Node, that's a server-side CORS-header issue rather than a bug in your code — please <a href="https://github.com/Radiant-Core/RXinDexer/issues">open an issue</a>.</p>
 
-<h2 id="faq">6. Notes &amp; FAQ</h2>
+<h2 id="faq">7. Notes &amp; FAQ</h2>
 
 <p><strong>Does the target address change?</strong> Yes — that's the point of a mutable name. Always resolve a name fresh at payment time rather than caching the address indefinitely; the owner may have re-pointed it.</p>
 

@@ -384,6 +384,47 @@
             white-space: pre;
         }
 
+        /* ── RNS BANNER ── */
+        .rns-banner {
+            background: linear-gradient(135deg, rgba(56,189,248,0.08) 0%, rgba(52,211,153,0.08) 100%);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 48px;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+        .rns-banner h2 { font-size: 1.75rem; margin-bottom: 12px; }
+        .rns-banner h2 .badge {
+            display: inline-block;
+            background: var(--green);
+            color: #0a0e17;
+            font-size: 0.7rem;
+            padding: 3px 10px;
+            border-radius: 20px;
+            vertical-align: middle;
+            margin-left: 10px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        .rns-banner > p { color: var(--text-muted); margin-bottom: 28px; max-width: 700px; margin-left: auto; margin-right: auto; }
+        .rns-features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+            text-align: left;
+        }
+        .rns-feature {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+        }
+        .rns-feature h4 { font-size: 0.95rem; margin-bottom: 6px; }
+        .rns-feature p { color: var(--text-muted); font-size: 0.82rem; }
+        .rns-feature .rns-icon { font-size: 1.2rem; margin-bottom: 8px; }
+        .rns-cta { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+
         /* ── MINING ── */
         .mining-info {
             display: grid;
@@ -549,6 +590,7 @@
             <li><a href="#specs">Opcodes</a></li>
             <li><a href="#specs">Specs</a></li>
             <li><a href="#ecosystem">Ecosystem</a></li>
+            <li><a href="#rns">RNS</a></li>
             <li><a href="#mining">Mining</a></li>
             <li><a href="#ai">AI</a></li>
             <li><a href="docs/">Docs</a></li>
@@ -868,8 +910,8 @@
             <a href="docs/wave-names.html" class="eco-card">
                 <div class="eco-icon icon-blue">&#x1f30a;</div>
                 <div>
-                    <h4>WAVE Names</h4>
-                    <p>Human-readable names (e.g. satoshi.rxd) backed by mutable Glyph NFTs. First-registration-wins resolution to an address — integrate any dapp with the copy-paste wave-resolver.js. Guide + REST API.</p>
+                    <h4>WAVE Names (RNS)</h4>
+                    <p>Human-readable names (e.g. satoshi.rxd) backed by mutable Glyph NFTs. Claim in Photonic Wallet, manage DNS records at <a href="https://rxd.zone" onclick="event.stopPropagation()">rxd.zone</a>, resolve with copy-paste wave-resolver.js. First-registration-wins.</p>
                     <span class="eco-tag tag-dev">Naming</span>
                 </div>
             </a>
@@ -905,6 +947,39 @@
                     <span class="eco-tag tag-node">Tools</span>
                 </div>
             </a>
+        </div>
+    </div>
+</section>
+
+<!-- ── RNS / WAVE NAMES ── -->
+<hr class="section-divider">
+<section id="rns">
+    <div class="container">
+        <div class="rns-banner">
+            <h2>Radiant Name Service <span class="badge">Live in Photonic Wallet</span></h2>
+            <p>Claim your <strong>.rxd</strong> name on the Radiant blockchain. Human-readable names like <code>satoshi.rxd</code> replace long addresses for payments, profiles, and now — real DNS records. Names are on-chain NFTs you own, not rent. First-registration-wins, so claim yours today.</p>
+            <div class="rns-features">
+                <div class="rns-feature">
+                    <div class="rns-icon">&#x1f4b3;</div>
+                    <h4>Claim in Photonic Wallet</h4>
+                    <p>Search and mint your <code>.rxd</code> name directly in Photonic Wallet. The name is a mutable Glyph NFT — you own it, transfer it, or sell it.</p>
+                </div>
+                <div class="rns-feature">
+                    <div class="rns-icon">&#x1f310;</div>
+                    <h4>Manage DNS at rxd.zone</h4>
+                    <p>Verified name owners can manage public DNS records at <a href="https://rxd.zone">rxd.zone</a> — point at GitHub Pages, Vercel, or Netlify with a CNAME and get a real SSL certificate.</p>
+                </div>
+                <div class="rns-feature">
+                    <div class="rns-icon">&#x1f50d;</div>
+                    <h4>Trustless Resolution</h4>
+                    <p>Anyone can resolve a name to an address from on-chain data. Use the copy-paste <a href="docs/wave-names.html">wave-resolver.js</a> or the public REST API.</p>
+                </div>
+            </div>
+            <div class="rns-cta">
+                <a href="https://photonic-wallet.com" class="btn btn-primary">Claim Your Name in Photonic Wallet</a>
+                <a href="https://rxd.zone" class="btn btn-secondary">Manage DNS at rxd.zone ↗</a>
+                <a href="docs/wave-names.html" class="btn btn-secondary">Read the Docs</a>
+            </div>
         </div>
     </div>
 </section>
@@ -1106,10 +1181,12 @@ contract TokenLock(pubkey owner) {
                 </ul>
             </div>
             <div class="link-group">
-                <h3>Wallets</h3>
+                <h3>Wallets &amp; Naming</h3>
                 <ul class="link-list">
                     <li><a href="https://github.com/Radiant-Core/Photonic-Wallet"><span class="link-icon">&#x1f4b3;</span> Photonic Wallet (Desktop)</a></li>
                     <li><a href="https://github.com/Radiant-Core/Electron-Wallet"><span class="link-icon">&#x1f4b0;</span> Electron Wallet (SPV)</a></li>
+                    <li><a href="https://rxd.zone"><span class="link-icon">&#x1f310;</span> rxd.zone — DNS for WAVE Names</a></li>
+                    <li><a href="docs/wave-names.html"><span class="link-icon">&#x1f30a;</span> WAVE Names Guide</a></li>
                 </ul>
             </div>
             <div class="link-group">
@@ -1165,6 +1242,7 @@ contract TokenLock(pubkey owner) {
                     <li><a href="https://github.com/Radiant-Core/Photonic-Wallet">Photonic Wallet</a></li>
                     <li><a href="https://github.com/Radiant-Core/RXinDexer">RXinDexer</a></li>
                     <li><a href="https://github.com/Radiant-Core/Glyph-miner">Glyph Miner</a></li>
+                    <li><a href="https://rxd.zone">rxd.zone</a></li>
                     <li><a href="explorer/">Block Explorer</a></li>
                 </ul>
             </div>
