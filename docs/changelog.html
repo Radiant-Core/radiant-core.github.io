@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Changelog — Radiant Core Docs</title>
+    <meta name="description" content="Release notes for the Radiant developer platform — the @radiant-core/sdk TypeScript SDK and the public RXinDexer REST API. What shipped, when, and where to read more.">
+    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
+    <link rel="stylesheet" href="docs.css">
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="container">
+        <a href="../" class="nav-brand"><img src="../radiant-logo-darkmode.jpg" alt="Radiant"> Radiant Core</a>
+        <button class="hamburger" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Menu">&#9776;</button>
+        <ul class="nav-links">
+            <li><a href="../#features">Features</a></li>
+            <li><a href="../#opcodes">Opcodes</a></li>
+            <li><a href="./" class="nav-active">Docs</a></li>
+            <li><a href="../#ecosystem">Ecosystem</a></li>
+            <li><a href="../#mining">Mining</a></li>
+            <li><a href="../explorer/">Explorer</a></li>
+            <li><a href="https://github.com/Radiant-Core" class="nav-cta">GitHub ↗</a></li>
+        </ul>
+    </div>
+</nav>
+
+<div class="doc-container">
+    <div class="breadcrumb"><a href="./">Docs</a> <span class="sep">/</span> <span>Changelog</span></div>
+
+    <div class="doc-header">
+        <h1>Changelog</h1>
+        <div class="doc-meta"><span>Radiant developer platform</span> <span>Last Updated: July 2026</span></div>
+    </div>
+
+    <div class="doc-content">
+
+<p>Release notes for the developer-facing pieces of the Radiant platform — the <a href="sdk.html"><code>@radiant-core/sdk</code></a> TypeScript SDK and the public <a href="https://github.com/Radiant-Core/RXinDexer">RXinDexer</a> REST API served at <code>https://radiantcore.org/api</code>. Newest first. For the Radiant Core node's own releases, see the <a href="https://github.com/Radiant-Core/Radiant-Core/releases">node release page</a>.</p>
+
+<h2 id="sdk-0-2-0">@radiant-core/sdk 0.2.0 <span class="tag tag-developer">SDK</span></h2>
+<p class="doc-meta"><span>2026-07-18</span> <span><a href="https://www.npmjs.com/package/@radiant-core/sdk">npm</a></span> <span><a href="https://github.com/Radiant-Core/radiant-sdk/blob/main/CHANGELOG.md">full changelog</a></span></p>
+
+<p>Discovery, partial fungible sends, and hardening. See the <a href="sdk.html">SDK guide</a> for usage.</p>
+
+<p><strong>Added</strong></p>
+<ul>
+<li><strong>Token discovery</strong> — <code>getRecentTokens</code>, <code>getTokensByType</code>, and <code>GLYPH_TOKEN_TYPE</code>: global, newest-first asset lists over the RXinDexer v4 discovery indexes, cursor-paginated with typed pages. Enables incremental <a href="sdk.html#discovery">watermark sync</a> — walk once, then page newest-first and stop below your saved <code>deploy_height</code>.</li>
+<li><strong><code>transferFungible</code></strong> — send <em>part</em> of an FT balance: multi-UTXO accumulation with an FT change output back to the sender. (<code>transferToken</code> still moves a single UTXO wholesale.)</li>
+<li><strong>Shape-exact script parsers</strong> — <code>parseNftScript</code>, <code>parseFtScript</code>, <code>parseP2pkhScript</code>, <code>tokenScriptKind</code>: validate what a prevout actually holds before trusting a counterparty. On auth-form (mutable/WAVE) NFTs, <code>parseNftScript</code> returns the singleton ref where a loose first-ref scan would return the mutable ref.</li>
+</ul>
+
+<p><strong>Fixed</strong></p>
+<ul>
+<li><strong><code>transferToken</code> for WAVE names / mutable NFTs</strong> — outputs are now rebuilt canonically instead of edited in place, dropping the mutable covenant's auth preamble (<code>OP_REQUIREINPUTREF</code>) that the node had been rejecting (<code>invalid-transaction-reference-operations</code>). Proven on-chain against a regtest node.</li>
+<li><strong><code>buildTx</code> fee guard</strong> — refuses to build a transaction whose fee lands above ~2× the network floor, catching photons/byte ↔ sats/kB unit slips, over-funding with <code>addChange: false</code>, and sub-dust change rolled into the fee. All three are irrecoverable once mined.</li>
+</ul>
+
+<div class="callout callout-info">
+<strong>Companion release — public discovery API.</strong> The RXinDexer v4 discovery indexes went live on <code>https://radiantcore.org/api</code> the same day, powering the SDK's discovery calls and usable directly over REST (opaque, URL-safe cursors; full reference in the <a href="developer-guide.html#rest-api">Developer Guide</a>):
+<ul>
+<li><code>GET /glyphs/recent</code> — newest-deployed tokens across all types, or one type via <code>type_id</code>.</li>
+<li><code>GET /glyphs/by-type/{type_id}?order=recent</code> — newest-first view of a single type (the previous <code>order=ref</code> hash order remains the default).</li>
+<li><code>GET /glyphs/encrypted</code> — encrypted-token list (ciphertext hashes and metadata commitments only); this path previously returned <code>422</code> and now works.</li>
+</ul>
+</div>
+
+<h2 id="sdk-0-1-0">@radiant-core/sdk 0.1.0 <span class="tag tag-developer">SDK</span></h2>
+<p class="doc-meta"><span>2026-06-28</span> <span><a href="https://www.npmjs.com/package/@radiant-core/sdk">npm</a></span></p>
+
+<p>Initial release of the TypeScript SDK for building Radiant dapps without reading internal wallet or library source.</p>
+<ul>
+<li><strong>ElectrumX WebSocket client</strong> (<code>ElectrumClient</code>) — balances, UTXOs, history, broadcast, live subscriptions, auto-reconnect; isomorphic.</li>
+<li><strong>Ref-safe UTXO selection</strong> (<code>selectRxdFunding</code> and friends) — never spends a token-bearing UTXO as RXD funding, so a raw <code>listUnspent()</code> result is safe to pass in.</li>
+<li><strong>Glyph token operations</strong> — <code>mintFT</code>, <code>mintNFT</code>, <code>transferToken</code> via the commit/reveal pattern, plus script/ref helpers.</li>
+<li><strong>WAVE name resolution</strong>, <strong>SLIP-0044 HD wallets</strong> (<code>m/44'/512'/0'/0/k</code>), transaction building, and photon⇄RXD unit helpers (photons as <code>BigInt</code> throughout).</li>
+<li>Dual ESM + CJS build with bundled TypeScript types; tree-shakeable. Requires Node 20.19+ or 22+.</li>
+</ul>
+
+    </div>
+    <div class="doc-footer">
+        <span><a href="./">← All Docs</a></span>
+        <span>&copy; 2022–2026 Radiant Core Contributors</span>
+    </div>
+</div>
+</body>
+</html>
