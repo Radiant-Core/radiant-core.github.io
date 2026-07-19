@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Radiant SDK — Radiant Core Docs</title>
-    <meta name="description" content="@radiant-core/sdk is a TypeScript SDK for building Radiant (RXD) dapps: an ElectrumX client, ref-safe UTXO selection that never burns tokens, Glyph token mint/transfer, WAVE name resolution, and SLIP-0044 HD wallets. Install, quickstart, and API overview.">
+    <meta name="description" content="@radiant-core/sdk is a TypeScript SDK for building Radiant (RXD) dapps: an ElectrumX client, ref-safe UTXO selection that never burns tokens, Glyph token mint/transfer, global token discovery, WAVE name resolution, and SLIP-0044 HD wallets. Install, quickstart, and API overview.">
     <link rel="icon" type="image/x-icon" href="../favicon.ico">
     <link rel="stylesheet" href="docs.css">
 </head>
@@ -31,7 +31,7 @@
 
     <div class="doc-header">
         <h1>Radiant SDK: Build Radiant dapps in TypeScript</h1>
-        <div class="doc-meta"><span>@radiant-core/sdk v0.1.0</span> <span>Last Updated: June 2026</span></div>
+        <div class="doc-meta"><span>@radiant-core/sdk v0.2.0</span> <span>Last Updated: July 2026</span></div>
     </div>
 
     <nav class="doc-toc">
@@ -43,9 +43,10 @@
             <li><a href="#wallet">4. Wallets &amp; Keys</a></li>
             <li><a href="#send">5. Sending RXD (Ref-Safe)</a></li>
             <li><a href="#tokens">6. Glyph Tokens</a></li>
-            <li><a href="#wave">7. WAVE Names</a></li>
-            <li><a href="#api">8. API Overview</a></li>
-            <li><a href="#notes">9. Notes &amp; Links</a></li>
+            <li><a href="#discovery">7. Token Discovery</a></li>
+            <li><a href="#wave">8. WAVE Names</a></li>
+            <li><a href="#api">9. API Overview</a></li>
+            <li><a href="#notes">10. Notes &amp; Links</a></li>
         </ul>
     </nav>
 
@@ -58,7 +59,9 @@
 <ul>
 <li><strong>ElectrumX WebSocket client</strong> — balances, UTXOs, broadcast, live subscriptions, auto-reconnect.</li>
 <li><strong>Ref-safe UTXO selection</strong> — token-bearing UTXOs are <em>never</em> spent as RXD funding, so you can't accidentally burn a token.</li>
-<li><strong>Glyph tokens</strong> — mint fungible tokens and NFTs, and transfer them (commit/reveal handled for you).</li>
+<li><strong>Glyph tokens</strong> — mint fungible tokens and NFTs, transfer them (commit/reveal handled for you), and send <em>part</em> of an FT balance with <code>transferFungible</code>.</li>
+<li><strong>Token discovery</strong> — global newest-first asset lists (<code>getRecentTokens</code>, <code>getTokensByType</code>) over the public indexer, cursor-paginated.</li>
+<li><strong>Shape-exact script parsers</strong> — <code>parseNftScript</code> / <code>parseFtScript</code> / <code>tokenScriptKind</code> validate what a prevout <em>actually</em> holds before you trust it.</li>
 <li><strong>WAVE names</strong> — resolve <code>alice.rxd</code> → address.</li>
 <li><strong>HD wallets</strong> — <code>m/44'/512'/0'/0/k</code> (SLIP-0044 coin type 512).</li>
 <li><strong>Tree-shakeable ESM + CJS</strong>, TypeScript types included, photons as <code>BigInt</code> throughout.</li>
@@ -150,7 +153,7 @@ console.log('sent', txid);</code></pre>
 
 <p>Mint and move <a href="token-creation.html">Glyph tokens</a> with the commit/reveal pattern handled for you. Fund from token-free UTXOs.</p>
 
-<pre><code>import { mintFT, mintNFT, transferToken, filterFundingCandidates } from '@radiant-core/sdk';
+<pre><code>import { mintFT, mintNFT, transferToken, transferFungible, filterFundingCandidates } from '@radiant-core/sdk';
 
 const funding = filterFundingCandidates(await client.listUnspent(me.address));
 
@@ -171,13 +174,43 @@ const nft = await mintNFT({
   fundingUtxos: funding,
 });
 
-// Transfer a token (FT or NFT) to a new owner
+// Transfer a token (FT or NFT) to a new owner — moves one UTXO whole
 await transferToken({
   client, address: me.address, wif: me.wif,
   tokenUtxo,                 // the FT/NFT UTXO (must include its on-chain script)
   toAddress: '1Recipient...',
   fundingUtxos: funding,     // covers the fee; token value is conserved
+});
+
+// Send PART of a fungible balance (new in 0.2.0). Accumulates across your
+// FT UTXOs and returns the remainder to you as an FT change output.
+await transferFungible({
+  client, address: me.address, wif: me.wif,
+  tokenUtxos,                // your FT UTXOs for this token (with scripts)
+  amount: 50n,               // send 50 of e.g. a 500 balance
+  toAddress: '1Recipient...',
+  fundingUtxos: funding,
 });</code></pre>
+
+<div class="callout callout-info">
+<strong>WAVE names &amp; mutable NFTs (fixed in 0.2.0).</strong> <code>transferToken</code> now rebuilds outputs canonically instead of editing the on-chain script in place. Previously a WAVE-name or mutable-NFT transfer carried the mutable covenant's auth preamble (<code>OP_REQUIREINPUTREF</code>) into the output and the node rejected it (<code>invalid-transaction-reference-operations</code>). The fix is proven on-chain against a regtest node.
+</div>
+
+<p><strong>Validate before you trust (new in 0.2.0).</strong> When a counterparty hands you a prevout — a swap maker "advertising" a token, a listing, anything you didn't build yourself — parse it with the shape-exact parsers instead of eyeballing refs:</p>
+
+<pre><code>import { parseNftScript, parseFtScript, tokenScriptKind } from '@radiant-core/sdk';
+
+const kind = tokenScriptKind(prevout.script);  // 'nft' | 'ft' | null
+
+const { ref, addressHash } = parseNftScript(prevout.script);
+if (ref) console.log(ref, addressHash);        // set only if the script is
+                                               // EXACTLY an NFT shape</code></pre>
+
+<p>(<code>parseP2pkhScript</code> does the same for plain pay-to-pubkey-hash outputs.)</p>
+
+<div class="callout callout-warn">
+<strong>Why shape-exact matters.</strong> On auth-form (mutable/WAVE) NFTs the script carries <em>two</em> refs. A loose "first ref in the script" scan returns the mutable ref; <code>parseNftScript</code> returns the singleton ref that actually identifies the token. If you match a maker's advertised token by a loose scan, you can be paid in the wrong asset.
+</div>
 
 <div class="callout callout-info">
 <strong>Finding your tokens.</strong> The indexer keys a token UTXO under <code>scriptHash(zeroRefs(tokenScript))</code>, not the owner's plain address. To list a held token, query <code>client.listUnspent(scriptHash(zeroRefs(ftScript(owner, ref))))</code> — the entries come back with <code>refs:[{ ref, type }]</code> (<code>type</code> is <code>"normal"</code> for FT, <code>"single"</code> for an NFT singleton).
@@ -187,7 +220,48 @@ await transferToken({
 <strong>Test on regtest first.</strong> <code>mintFT</code> / <code>mintNFT</code> / <code>transferToken</code> broadcast real, irreversible transactions. They reproduce the proven Photonic-Wallet on-chain templates and are regtest-validated, but you should smoke-test your own flow on regtest/testnet before mainnet.
 </div>
 
-<h2 id="wave">7. WAVE Names</h2>
+<h2 id="discovery">7. Token Discovery</h2>
+
+<p>New in 0.2.0: query <strong>global, newest-first token lists</strong> — every Glyph asset on the chain, or one type at a time — without running your own indexer. Backed by the public RXinDexer v4 discovery indexes (live on <code>https://radiantcore.org/api</code> since 2026-07-18; the raw REST endpoints are documented in the <a href="developer-guide.html#rest-api">Developer Guide</a>).</p>
+
+<pre><code>import { getRecentTokens, getTokensByType, GLYPH_TOKEN_TYPE } from '@radiant-core/sdk';
+
+// Newest tokens across ALL types (one page)
+const { tokens, nextCursor } = await getRecentTokens({ limit: 100 });
+for (const t of tokens) {
+  console.log(t.type_name, t.name ?? t.ticker, t.ref, t.deploy_height);
+}
+
+// Newest NFTs only — either form works:
+await getRecentTokens({ typeId: GLYPH_TOKEN_TYPE.NFT });
+await getTokensByType(GLYPH_TOKEN_TYPE.NFT, { order: 'recent' });</code></pre>
+
+<p>Pages are cursor-paginated: pass the previous page's <code>nextCursor</code> back as <code>cursor</code> to fetch the next page (<code>null</code> = no more pages). Cursors are opaque, URL-safe strings and are <strong>order-specific</strong> — never reuse a cursor across a change of <code>order</code> or type. <code>getTokensByType</code> defaults to <code>order: 'ref'</code> (the stable pre-v4 hash order); pass <code>order: 'recent'</code> for newest-first.</p>
+
+<p><strong>The watermark-sync pattern.</strong> Because the lists are newest-first, an indexer, gallery, or bot never has to re-walk the chain: do one full walk, save the newest <code>deploy_height</code> you saw, then on later runs page newest-first and <em>stop</em> as soon as a token's height drops below your watermark. You only ever pay for tokens minted since the last run.</p>
+
+<pre><code>import { getRecentTokens } from '@radiant-core/sdk';
+
+async function syncNewTokens(watermark /* newest deploy_height already seen */) {
+  let cursor, newest = watermark;
+
+  paging: while (true) {
+    const { tokens, nextCursor } = await getRecentTokens({ limit: 200, cursor });
+    for (const t of tokens) {
+      if (t.deploy_height &lt; watermark) break paging; // everything older is known
+      newest = Math.max(newest, t.deploy_height);
+      await upsertToken(t);   // idempotent — heights at the boundary can repeat
+    }
+    if (!nextCursor) break;
+    cursor = nextCursor;
+  }
+  return newest; // save as the next run's watermark
+}</code></pre>
+
+<div class="callout callout-info">
+<strong>Type ids.</strong> <code>GLYPH_TOKEN_TYPE</code> = <code>FT: 1</code>, <code>NFT: 2</code>, <code>DAT: 3</code>, <code>DMINT: 4</code>, <code>WAVE: 5</code>, <code>CONTAINER: 6</code>, <code>AUTHORITY: 7</code> (<code>UNKNOWN: 0</code>). Each row is a <code>GlyphTokenSummary</code> — <code>ref</code>, <code>ref_hex</code>, <code>type</code>/<code>type_name</code>, <code>protocols</code>, <code>name</code>, <code>ticker</code>, <code>deploy_height</code>, <code>deploy_txid</code>, <code>is_spent</code>, plus whatever else the indexer knows (supply, icon, attrs, …).</div>
+
+<h2 id="wave">8. WAVE Names</h2>
 
 <p>Resolve <a href="wave-names.html">WAVE names</a> to addresses through the public indexer.</p>
 
@@ -198,7 +272,7 @@ if (rec.registered) console.log(rec.address, rec.owner, rec.expires);
 
 const addr = await waveResolveAddress('alice'); // string | null</code></pre>
 
-<h2 id="api">8. API Overview</h2>
+<h2 id="api">9. API Overview</h2>
 
 <table>
 <thead><tr><th>Area</th><th>Exports</th></tr></thead>
@@ -207,9 +281,10 @@ const addr = await waveResolveAddress('alice'); // string | null</code></pre>
 <tr><td>Wallet</td><td><code>HDWallet</code>, <code>Keys</code></td></tr>
 <tr><td>Funding</td><td><code>selectRxdFunding</code>, <code>filterFundingCandidates</code>, <code>isFundingSafe</code>, <code>assertFundingSafe</code>, <code>estimateFee</code>, <code>sumValue</code></td></tr>
 <tr><td>Transactions</td><td><code>buildRxdTransfer</code>, <code>buildTx</code></td></tr>
-<tr><td>Tokens</td><td><code>mintFT</code>, <code>mintNFT</code>, <code>transferToken</code>, <code>encodeGlyph</code>, <code>ftScript</code>, <code>nftScript</code>, <code>parseTokenRef</code></td></tr>
+<tr><td>Tokens</td><td><code>mintFT</code>, <code>mintNFT</code>, <code>transferToken</code>, <code>transferFungible</code>, <code>encodeGlyph</code>, <code>ftScript</code>, <code>nftScript</code>, <code>parseTokenRef</code></td></tr>
+<tr><td>Discovery</td><td><code>getRecentTokens</code>, <code>getTokensByType</code>, <code>GLYPH_TOKEN_TYPE</code></td></tr>
 <tr><td>WAVE</td><td><code>waveResolve</code>, <code>waveResolveAddress</code>, <code>waveLabel</code></td></tr>
-<tr><td>Script</td><td><code>scriptHash</code>, <code>addressToScriptHash</code>, <code>p2pkhScript</code>, <code>isTokenBearing</code>, <code>zeroRefs</code>, <code>packRef</code>, <code>unpackRef</code></td></tr>
+<tr><td>Script</td><td><code>scriptHash</code>, <code>addressToScriptHash</code>, <code>p2pkhScript</code>, <code>parseNftScript</code>, <code>parseFtScript</code>, <code>parseP2pkhScript</code>, <code>tokenScriptKind</code>, <code>isTokenBearing</code>, <code>zeroRefs</code>, <code>packRef</code>, <code>unpackRef</code></td></tr>
 <tr><td>Units</td><td><code>rxdToPhotons</code>, <code>photonsToRxd</code></td></tr>
 <tr><td>Errors</td><td><code>RadiantSdkError</code>, <code>InsufficientFundsError</code>, <code>TokenBurnGuardError</code>, <code>ElectrumError</code>, <code>ValidationError</code></td></tr>
 </tbody>
@@ -217,11 +292,13 @@ const addr = await waveResolveAddress('alice'); // string | null</code></pre>
 
 <p>Full reference (every export, options, and return types) is in <a href="https://github.com/Radiant-Core/radiant-sdk/blob/main/docs/API.md">docs/API.md</a>.</p>
 
-<h2 id="notes">9. Notes &amp; Links</h2>
+<h2 id="notes">10. Notes &amp; Links</h2>
 
 <p><strong>Validated end-to-end.</strong> The SDK ships with unit tests (CI on Node 20/22/24), on-chain consensus validation against a <code>radiantd</code> regtest node (FT/NFT mint + transfer accepted), and indexer validation against RXinDexer/ElectrumX (tokens surfaced via <code>listUnspent</code> with their refs).</p>
 
 <p><strong>Fee policy.</strong> Mainnet min-relay is <code>10,000</code> photons/byte; testnet/regtest is <code>1,000</code>. The SDK sets the fee from the measured signed transaction size, so token transactions reliably clear the floor.</p>
+
+<p><strong>Fee sanity guard (new in 0.2.0).</strong> <code>buildTx</code> now refuses to build a transaction whose fee lands above ~2× the network floor (plus size headroom), throwing a <code>ValidationError</code> instead of broadcasting. This catches the three silent overpay paths — photons/byte ↔ sats/kB unit slips, over-funding with <code>addChange: false</code>, and radiantjs rolling sub-dust change into the fee — all of which are irrecoverable once mined. The guard is automatic; there is nothing to configure.</p>
 
 <table>
 <thead><tr><th>Resource</th><th>Link</th></tr></thead>

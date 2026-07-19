@@ -31,7 +31,7 @@
 
     <div class="doc-header">
         <h1>Radiant Developer Guide</h1>
-        <div class="doc-meta"><span>Version 1.2</span> <span>Last Updated: February 2026</span></div>
+        <div class="doc-meta"><span>Version 1.3</span> <span>Last Updated: July 2026</span></div>
     </div>
 
     <nav class="doc-toc">
@@ -524,6 +524,29 @@ await client.request('blockchain.scripthash.subscribe', [scriptHash]);</code></p
     .update(script.toBuffer()).digest();
   return hash.reverse().toString('hex');  // Reverse for Electrum
 }</code></pre>
+
+<h3 id="rest-api">Public REST API (RXinDexer)</h3>
+
+<p>Alongside the ElectrumX WebSocket protocol, the public <a href="https://github.com/Radiant-Core/RXinDexer">RXinDexer</a> instance serves a plain-JSON REST API at <code>https://radiantcore.org/api</code> — <code>GET</code>-only, no authentication. Token metadata lives at <code>/glyphs/{ref}</code>, search at <code>/glyphs/search?q=…</code>, and WAVE-name lookups at <code>/wave/*</code> (full reference on the <a href="wave-names.html#api">WAVE Names page</a>).</p>
+
+<p><strong>Token discovery endpoints (added 2026-07-18).</strong> The v4 discovery indexes expose global, newest-first asset lists — every Glyph token on the chain, without walking blocks yourself:</p>
+
+<table>
+<thead><tr><th>Endpoint</th><th>Parameters</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td><code>GET /glyphs/recent</code></td><td><code>limit</code> (default 100, max 500), <code>cursor</code>, optional <code>type_id</code></td><td>Newest-deployed tokens across <em>all</em> types, or one type if <code>type_id</code> is given.</td></tr>
+<tr><td><code>GET /glyphs/by-type/{type_id}</code></td><td><code>limit</code>, <code>cursor</code>, <code>order</code> = <code>ref</code> (default, stable hash order) or <code>recent</code> (newest-first, new)</td><td>Tokens of one type. <code>?order=recent</code> is the new newest-first view.</td></tr>
+<tr><td><code>GET /glyphs/encrypted</code></td><td><code>limit</code>, <code>cursor</code>, <code>timelocked_only</code></td><td>Encrypted Glyph tokens — ciphertext hashes and metadata commitments only, never plaintext or keys. (Fixed 2026-07-18; previously this path returned <code>422</code>.)</td></tr>
+</tbody>
+</table>
+
+<pre><code>curl 'https://radiantcore.org/api/glyphs/recent?limit=5'
+curl 'https://radiantcore.org/api/glyphs/recent?type_id=2'        # newest NFTs
+curl 'https://radiantcore.org/api/glyphs/by-type/1?order=recent'  # newest FTs</code></pre>
+
+<p>Responses return a <code>tokens</code> array plus <code>next_cursor</code>. Cursors are <strong>opaque, URL-safe strings</strong>: pass <code>next_cursor</code> back as <code>cursor</code> for the next page (<code>null</code> = done), and never reuse a cursor across a different <code>order</code> or type. Type ids: <code>1</code>=FT, <code>2</code>=NFT, <code>3</code>=DAT, <code>4</code>=dMint, <code>5</code>=WAVE, <code>6</code>=Container, <code>7</code>=Authority.</p>
+
+<p>From TypeScript, <a href="sdk.html#discovery"><code>@radiant-core/sdk</code> v0.2.0 wraps these</a> as <code>getRecentTokens()</code> / <code>getTokensByType()</code> with typed pages.</p>
 
 <hr>
 
