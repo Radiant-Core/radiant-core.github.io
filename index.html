@@ -266,6 +266,35 @@
         .opcode-card h4 { font-size: 0.95rem; margin-bottom: 6px; }
         .opcode-card p { color: var(--text-muted); font-size: 0.82rem; }
 
+        /* ── WHAT'S NEW ── */
+        .whats-new {
+            display: flex;
+            align-items: center;
+            gap: 22px;
+            flex-wrap: wrap;
+            background: linear-gradient(135deg, rgba(52,211,153,0.08) 0%, rgba(56,189,248,0.08) 100%);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 20px 28px;
+            margin-top: 32px;
+        }
+        .whats-new .wn-badge {
+            flex-shrink: 0;
+            background: var(--green);
+            color: #05231a;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            text-transform: uppercase;
+        }
+        .whats-new .wn-text { flex: 1; min-width: 260px; color: var(--text); font-size: 0.95rem; line-height: 1.5; }
+        .whats-new .wn-text .wn-date { color: var(--text-muted); font-size: 0.8rem; white-space: nowrap; }
+        .whats-new .wn-links { display: flex; gap: 20px; flex-wrap: wrap; }
+        .whats-new .wn-links a { color: var(--accent); font-size: 0.9rem; font-weight: 500; white-space: nowrap; }
+        .whats-new .wn-links a:hover { text-decoration: underline; }
+
         /* ── SPECS TABLE ── */
         .specs-grid {
             display: grid;
@@ -640,6 +669,20 @@
         <div class="stat">
             <div class="stat-value">June 2022</div>
             <div class="stat-label">Fair Launch</div>
+        </div>
+    </div>
+</div>
+
+<!-- ── WHAT'S NEW ── -->
+<div class="container">
+    <div class="whats-new">
+        <span class="wn-badge">New</span>
+        <div class="wn-text">
+            <strong>@radiant-core/sdk 0.2.0</strong> — global token discovery, fungible partial-send, and shape-exact script parsers, plus a public discovery REST API on <code>radiantcore.org/api</code>. <span class="wn-date">July 18, 2026</span>
+        </div>
+        <div class="wn-links">
+            <a href="docs/changelog.html">Changelog →</a>
+            <a href="docs/sdk.html">SDK guide →</a>
         </div>
     </div>
 </div>
